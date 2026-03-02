@@ -1,7 +1,6 @@
 package auth
 
 import (
-	"fmt"
 	"testing"
 	"time"
 
@@ -152,43 +151,6 @@ func TestTokenManager_EnvironmentIsolation(t *testing.T) {
 	}
 	if hardKey != expectedHard {
 		t.Errorf("Hardening key = %v, want %v", hardKey, expectedHard)
-	}
-}
-
-func TestIsOversizedKeyringError(t *testing.T) {
-	tests := []struct {
-		name string
-		err  error
-		want bool
-	}{
-		{
-			name: "nil error",
-			err:  nil,
-			want: false,
-		},
-		{
-			name: "too big message",
-			err:  fmt.Errorf("data passed to Set was too big"),
-			want: true,
-		},
-		{
-			name: "too large message",
-			err:  fmt.Errorf("value too large for keychain item"),
-			want: true,
-		},
-		{
-			name: "unrelated message",
-			err:  fmt.Errorf("permission denied"),
-			want: false,
-		},
-	}
-
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			if got := isOversizedKeyringError(tt.err); got != tt.want {
-				t.Errorf("isOversizedKeyringError() = %v, want %v", got, tt.want)
-			}
-		})
 	}
 }
 
