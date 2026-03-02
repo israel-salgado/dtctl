@@ -11,7 +11,7 @@ import (
 const (
 	// OAuthTokenPrefix is prepended to OAuth token names in keyring
 	OAuthTokenPrefix = "oauth:"
-	
+
 	// TokenRefreshBuffer is how long before expiry we refresh tokens
 	TokenRefreshBuffer = 5 * time.Minute
 )
@@ -28,14 +28,11 @@ func NewTokenManager(oauthConfig *OAuthConfig) (*TokenManager, error) {
 	if oauthConfig == nil {
 		oauthConfig = DefaultOAuthConfig()
 	}
-	
-	env := EnvironmentProd
-	env = oauthConfig.Environment
-	
+
 	return &TokenManager{
 		flow:        &OAuthFlow{config: oauthConfig},
 		tokenStore:  config.NewTokenStore(),
-		environment: env,
+		environment: oauthConfig.Environment,
 	}, nil
 }
 
@@ -61,7 +58,7 @@ func (tm *TokenManager) GetToken(tokenName string) (string, error) {
 		}
 		return refreshed.AccessToken, nil
 	}
-	
+
 	// Check if token needs refresh
 	if tm.needsRefresh(&stored.TokenSet) {
 		refreshed, err := tm.RefreshToken(tokenName)
@@ -74,7 +71,7 @@ func (tm *TokenManager) GetToken(tokenName string) (string, error) {
 		}
 		return refreshed.AccessToken, nil
 	}
-	
+
 	return stored.AccessToken, nil
 }
 
@@ -85,30 +82,30 @@ func (tm *TokenManager) RefreshToken(tokenName string) (*TokenSet, error) {
 	if err != nil {
 		return nil, err
 	}
-	
+
 	if stored.RefreshToken == "" {
 		return nil, fmt.Errorf("no refresh token available")
 	}
-	
+
 	// Refresh the token
 	newTokens, err := tm.flow.RefreshToken(stored.RefreshToken)
 	if err != nil {
 		return nil, fmt.Errorf("failed to refresh token: %w", err)
 	}
-	
+
 	// Preserve existing refresh token if the provider does not return a new one
 	if newTokens.RefreshToken == "" {
 		newTokens.RefreshToken = stored.RefreshToken
 	}
-	
+
 	// Update stored token set
 	stored.TokenSet = *newTokens
-	
+
 	// Save refreshed token
 	if err := tm.saveToken(tokenName, stored); err != nil {
 		return nil, fmt.Errorf("failed to save refreshed token: %w", err)
 	}
-	
+
 	return newTokens, nil
 }
 
@@ -118,19 +115,19 @@ func (tm *TokenManager) SaveToken(tokenName string, tokens *TokenSet) error {
 		TokenSet: *tokens,
 		Name:     tokenName,
 	}
-	
+
 	return tm.saveToken(tokenName, stored)
 }
 
 // DeleteToken removes a stored OAuth token
 func (tm *TokenManager) DeleteToken(tokenName string) error {
 	keyringName := tm.getKeyringName(tokenName)
-	
+
 	if config.IsKeyringAvailable() {
 		return tm.tokenStore.DeleteToken(keyringName)
 	}
-	
-	// OAuth tokens require keyring, so if keyring is not available, 
+
+	// OAuth tokens require keyring, so if keyring is not available,
 	// the token doesn't exist in our OAuth storage
 	return fmt.Errorf("OAuth token deletion requires keyring support")
 }
@@ -150,7 +147,7 @@ func (tm *TokenManager) needsRefresh(tokens *TokenSet) bool {
 		// This shouldn't happen, but is a safety fallback
 		return false
 	}
-	
+
 	// Refresh if token expires within the buffer period
 	return time.Now().Add(TokenRefreshBuffer).After(tokens.ExpiresAt)
 }
@@ -158,35 +155,35 @@ func (tm *TokenManager) needsRefresh(tokens *TokenSet) bool {
 // loadToken loads a token from storage
 func (tm *TokenManager) loadToken(tokenName string) (*StoredToken, error) {
 	keyringName := tm.getKeyringName(tokenName)
-	
+
 	// Try to load from keyring
 	if config.IsKeyringAvailable() {
 		data, err := tm.tokenStore.GetToken(keyringName)
 		if err != nil {
 			return nil, fmt.Errorf("failed to load token from keyring: %w", err)
 		}
-		
+
 		var stored StoredToken
 		if err := json.Unmarshal([]byte(data), &stored); err != nil {
 			return nil, fmt.Errorf("failed to parse stored token: %w", err)
 		}
-		
+
 		return &stored, nil
 	}
-	
+
 	return nil, fmt.Errorf("OAuth tokens require keyring support (not available on this system)")
 }
 
 // saveToken saves a token to storage
 func (tm *TokenManager) saveToken(tokenName string, stored *StoredToken) error {
 	keyringName := tm.getKeyringName(tokenName)
-	
+
 	// Serialize token
 	data, err := json.Marshal(stored)
 	if err != nil {
 		return fmt.Errorf("failed to serialize token: %w", err)
 	}
-	
+
 	// Save to keyring
 	if config.IsKeyringAvailable() {
 		if err := tm.tokenStore.SetToken(keyringName, string(data)); err != nil {
@@ -202,7 +199,7 @@ func (tm *TokenManager) saveToken(tokenName string, stored *StoredToken) error {
 		}
 		return nil
 	}
-	
+
 	return fmt.Errorf("OAuth tokens require keyring support (not available on this system)")
 }
 
