@@ -98,6 +98,10 @@ if !dryRun {
 
 **Examples**: [cmd/edit.go](cmd/edit.go), [cmd/create.go](cmd/create.go), [cmd/apply.go](cmd/apply.go)
 
+## Privacy
+
+Never put customer names, employee names, usernames, or specific Dynatrace environment identifiers into the codebase, GitHub issues, PRs, release notes, or commits.
+
 ## Common Pitfalls
 
 ❌ **Don't** add query filters as CLI flags (e.g., `--filter-status`)  
