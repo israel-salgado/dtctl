@@ -647,6 +647,74 @@ func TestGolden_ErrorPermission(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Golden tests: agent mode error output (JSON envelope with ok: false)
+// ---------------------------------------------------------------------------
+
+func TestGolden_AgentErrorAuth(t *testing.T) {
+	var buf bytes.Buffer
+	detail := &ErrorDetail{
+		Code:       "auth_required",
+		Message:    "authentication failed",
+		Operation:  "get workflows",
+		StatusCode: 401,
+		RequestID:  "req-abc-123",
+		Suggestions: []string{
+			"Run 'dtctl auth login' to refresh your token",
+			"Verify your token is correct in the current context configuration",
+		},
+	}
+	if err := PrintError(&buf, detail); err != nil {
+		t.Fatalf("PrintError failed: %v", err)
+	}
+	assertGolden(t, "errors/auth-error-agent", buf.String())
+}
+
+func TestGolden_AgentErrorNotFound(t *testing.T) {
+	var buf bytes.Buffer
+	detail := &ErrorDetail{
+		Code:       "not_found",
+		Message:    "workflow not found",
+		Operation:  "get workflows",
+		StatusCode: 404,
+		Suggestions: []string{
+			"Verify the resource name or ID is correct",
+			"List available resources: 'dtctl get workflows'",
+		},
+	}
+	if err := PrintError(&buf, detail); err != nil {
+		t.Fatalf("PrintError failed: %v", err)
+	}
+	assertGolden(t, "errors/not-found-agent", buf.String())
+}
+
+func TestGolden_AgentErrorSafetyBlocked(t *testing.T) {
+	var buf bytes.Buffer
+	detail := &ErrorDetail{
+		Code:    "safety_blocked",
+		Message: "Context 'production' (readonly) does not allow delete operations",
+		Suggestions: []string{
+			"Switch to a context with write permissions",
+		},
+	}
+	if err := PrintError(&buf, detail); err != nil {
+		t.Fatalf("PrintError failed: %v", err)
+	}
+	assertGolden(t, "errors/safety-blocked-agent", buf.String())
+}
+
+func TestGolden_AgentErrorGeneric(t *testing.T) {
+	var buf bytes.Buffer
+	detail := &ErrorDetail{
+		Code:    "error",
+		Message: "something unexpected happened",
+	}
+	if err := PrintError(&buf, detail); err != nil {
+		t.Fatalf("PrintError failed: %v", err)
+	}
+	assertGolden(t, "errors/generic-error-agent", buf.String())
+}
+
+// ---------------------------------------------------------------------------
 // Golden tests: agent mode output
 // ---------------------------------------------------------------------------
 

@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"os"
 	"strings"
@@ -12,6 +13,7 @@ import (
 	"github.com/dynatrace-oss/dtctl/pkg/aidetect"
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 	"github.com/dynatrace-oss/dtctl/pkg/config"
+	"github.com/dynatrace-oss/dtctl/pkg/diagnostic"
 	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 	"github.com/dynatrace-oss/dtctl/pkg/suggest"
@@ -84,8 +86,14 @@ func Execute() {
 			err = enhanceFlagError(rootCmd, err)
 		}
 
+		if agentMode || plainMode {
+			detail := errorToDetail(err)
+			_ = output.PrintError(os.Stderr, detail)
+			os.Exit(exitCodeForError(err))
+		}
+
 		fmt.Fprintf(os.Stderr, "Error: %s\n", err)
-		os.Exit(1)
+		os.Exit(exitCodeForError(err))
 	}
 }
 
@@ -157,6 +165,132 @@ func setupErrorHandlers(cmd *cobra.Command) {
 	for _, sub := range cmd.Commands() {
 		setupErrorHandlers(sub)
 	}
+}
+
+// errorToDetail converts any error into a structured ErrorDetail for agent/plain mode output.
+// It uses errors.As to extract rich context from typed errors when available.
+func errorToDetail(err error) *output.ErrorDetail {
+	// diagnostic.Error — wraps API errors with operation context and suggestions
+	var diagErr *diagnostic.Error
+	if errors.As(err, &diagErr) {
+		code := output.ClassifyHTTPError(diagErr.StatusCode)
+		if diagErr.StatusCode == 0 {
+			code = "error"
+		}
+		return &output.ErrorDetail{
+			Code:        code,
+			Message:     diagErr.Message,
+			Operation:   diagErr.Operation,
+			StatusCode:  diagErr.StatusCode,
+			RequestID:   diagErr.RequestID,
+			Suggestions: diagErr.Suggestions,
+		}
+	}
+
+	// client.APIError — raw API error without diagnostic wrapping
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		msg := apiErr.Message
+		if apiErr.Details != "" {
+			msg += " - " + apiErr.Details
+		}
+		return &output.ErrorDetail{
+			Code:       output.ClassifyHTTPError(apiErr.StatusCode),
+			Message:    msg,
+			StatusCode: apiErr.StatusCode,
+		}
+	}
+
+	// safety.SafetyError — operation blocked by safety level
+	var safetyErr *safety.SafetyError
+	if errors.As(err, &safetyErr) {
+		return &output.ErrorDetail{
+			Code:        "safety_blocked",
+			Message:     safetyErr.Reason,
+			Suggestions: safetyErr.Suggestions,
+		}
+	}
+
+	// suggest.CommandError — unknown command with "did you mean?" suggestions
+	var cmdErr *suggest.CommandError
+	if errors.As(err, &cmdErr) {
+		detail := &output.ErrorDetail{
+			Code:    "unknown_command",
+			Message: cmdErr.Message,
+		}
+		if cmdErr.Suggestion != nil {
+			detail.Suggestions = []string{
+				fmt.Sprintf("did you mean %q?", cmdErr.Suggestion.Value),
+			}
+		}
+		return detail
+	}
+
+	// suggest.FlagError — unknown flag with "did you mean?" suggestion
+	var flagErr *suggest.FlagError
+	if errors.As(err, &flagErr) {
+		detail := &output.ErrorDetail{
+			Code:    "unknown_command",
+			Message: flagErr.Message,
+		}
+		if flagErr.Suggestion != nil {
+			detail.Suggestions = []string{
+				fmt.Sprintf("did you mean --%s?", flagErr.Suggestion.Value),
+			}
+		}
+		return detail
+	}
+
+	// Fallback — generic error with no structured context
+	return &output.ErrorDetail{
+		Code:    classifyGenericError(err),
+		Message: err.Error(),
+	}
+}
+
+// classifyGenericError attempts to classify an error by inspecting its message
+// when no typed error is available.
+func classifyGenericError(err error) string {
+	msg := strings.ToLower(err.Error())
+	switch {
+	case strings.Contains(msg, "no active context") || strings.Contains(msg, "no context"):
+		return "context_error"
+	case strings.Contains(msg, "config") || strings.Contains(msg, "configuration"):
+		return "config_error"
+	case strings.Contains(msg, "timed out") || strings.Contains(msg, "timeout"):
+		return "timeout"
+	case strings.Contains(msg, "validation") || strings.Contains(msg, "invalid"):
+		return "validation_error"
+	default:
+		return "error"
+	}
+}
+
+// exitCodeForError returns the appropriate process exit code for an error.
+// Uses typed exit codes from client.APIError and diagnostic.Error when available,
+// falling back to ExitUsageError for command/flag errors and ExitError for everything else.
+func exitCodeForError(err error) int {
+	var diagErr *diagnostic.Error
+	if errors.As(err, &diagErr) {
+		return diagErr.ExitCode()
+	}
+
+	var apiErr *client.APIError
+	if errors.As(err, &apiErr) {
+		return apiErr.ExitCode()
+	}
+
+	var cmdErr *suggest.CommandError
+	if errors.As(err, &cmdErr) {
+		return client.ExitUsageError
+	}
+
+	var flagErr *suggest.FlagError
+	if errors.As(err, &flagErr) {
+		return client.ExitUsageError
+	}
+
+	return client.ExitError
 }
 
 // requireSubcommand returns an error with suggestions when a subcommand is required but not provided or invalid
