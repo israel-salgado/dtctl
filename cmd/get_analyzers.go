@@ -64,7 +64,7 @@ Examples:
 // getCopilotSkillsCmd retrieves Davis CoPilot skills
 var getCopilotSkillsCmd = &cobra.Command{
 	Use:     "copilot-skills",
-	Aliases: []string{"copilot-skill", "skills"},
+	Aliases: []string{"copilot-skill"},
 	Short:   "Get Davis CoPilot skills",
 	Long: `Get available Davis CoPilot skills.
 

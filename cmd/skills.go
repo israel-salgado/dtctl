@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"encoding/json"
 	"fmt"
 	"os"
 	"strings"
@@ -18,10 +17,8 @@ var skillsCmd = &cobra.Command{
 	Long: `Manage dtctl skill files for AI coding assistants.
 
 Skill files teach your AI assistant how to use dtctl effectively.
-Supported agents: claude, copilot, cursor, opencode.
-
-Examples:
-  # Auto-detect agent and install skill file
+Supported agents: claude, copilot, cursor, opencode.`,
+	Example: `  # Auto-detect agent and install skill file
   dtctl skills install
 
   # Install for a specific agent
@@ -191,12 +188,19 @@ func runSkillsInstall(cmd *cobra.Command, _ []string) error {
 		scope = "global"
 	}
 
+	printer := NewPrinter()
+	if ap := enrichAgent(printer, "skills", "install"); ap != nil {
+		ap.SetSuggestions([]string{
+			"Run 'dtctl skills status' to verify installation",
+		})
+	}
+
 	if agentMode {
 		action := "installed"
 		if result.Replaced {
 			action = "updated"
 		}
-		return printAgentJSON(skillsInstallAgentResult{
+		return printer.Print(skillsInstallAgentResult{
 			Action: action,
 			Agent:  result.Agent.Name,
 			Path:   result.Path,
@@ -216,6 +220,11 @@ func runSkillsInstall(cmd *cobra.Command, _ []string) error {
 
 // runSkillsList lists all supported agents.
 func runSkillsList() error {
+	printer := NewPrinter()
+	if ap := enrichAgent(printer, "skills", "list"); ap != nil {
+		ap.SetTotal(len(skills.AllAgents()))
+	}
+
 	if agentMode {
 		var entries []skillsListAgentEntry
 		for _, a := range skills.AllAgents() {
@@ -226,7 +235,7 @@ func runSkillsList() error {
 				SupportsGlobal: a.GlobalPath != "",
 			})
 		}
-		return printAgentJSON(entries)
+		return printer.PrintList(entries)
 	}
 
 	fmt.Println("Supported agents:")
@@ -259,8 +268,15 @@ func runSkillsUninstall(cmd *cobra.Command, _ []string) error {
 		return err
 	}
 
+	printer := NewPrinter()
+	if ap := enrichAgent(printer, "skills", "uninstall"); ap != nil {
+		ap.SetSuggestions([]string{
+			"Run 'dtctl skills status' to verify removal",
+		})
+	}
+
 	if agentMode {
-		return printAgentJSON(skillsUninstallAgentResult{
+		return printer.Print(skillsUninstallAgentResult{
 			Agent:   agent.Name,
 			Removed: removed,
 		})
@@ -290,6 +306,9 @@ func runSkillsStatus(cmd *cobra.Command, _ []string) error {
 	// Detect agent once, pass into print helpers
 	detectedAgent, detected := skills.DetectAgent()
 
+	printer := NewPrinter()
+	ap := enrichAgent(printer, "skills", "status")
+
 	if forFlag != "" {
 		agent, err := resolveAgent(forFlag)
 		if err != nil {
@@ -298,7 +317,7 @@ func runSkillsStatus(cmd *cobra.Command, _ []string) error {
 
 		result := skills.Status(agent, baseDir)
 		if agentMode {
-			return printAgentJSON(statusToAgentEntry(result))
+			return printer.Print(statusToAgentEntry(result))
 		}
 		printStatus(result, detectedAgent, detected)
 		return nil
@@ -312,7 +331,10 @@ func runSkillsStatus(cmd *cobra.Command, _ []string) error {
 		for _, r := range results {
 			entries = append(entries, statusToAgentEntry(r))
 		}
-		return printAgentJSON(entries)
+		if ap != nil {
+			ap.SetTotal(len(entries))
+		}
+		return printer.PrintList(entries)
 	}
 
 	anyInstalled := false
@@ -391,11 +413,4 @@ func resolveAgent(forFlag string) (skills.Agent, error) {
 	}
 
 	return agent, nil
-}
-
-// printAgentJSON writes a value as indented JSON to stdout for agent-mode output.
-func printAgentJSON(v interface{}) error {
-	enc := json.NewEncoder(os.Stdout)
-	enc.SetIndent("", "  ")
-	return enc.Encode(v)
 }
