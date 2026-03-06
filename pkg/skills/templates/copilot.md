@@ -1,4 +1,4 @@
-## dtctl CLI (v{{.Version}})
+# dtctl CLI (v{{.Version}})
 
 When the user wants to interact with Dynatrace, use dtctl:
 - `dtctl get <resource>` to list resources
