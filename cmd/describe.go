@@ -16,8 +16,32 @@ import (
 var describeCmd = &cobra.Command{
 	Use:   "describe",
 	Short: "Show details of a specific resource",
-	Long:  `Show detailed information about a specific resource.`,
-	RunE:  requireSubcommand,
+	Long: `Show detailed information about a specific resource.
+
+Unlike 'get', which outputs a list or a raw resource definition, 'describe'
+provides a human-readable summary with contextual details: trigger
+configuration for workflows, section counts for dashboards, retention
+policies for buckets, etc.
+
+Supported resources:
+  workflows (wf)          workflow-executions (wfe)  dashboards (dash, db)
+  notebooks (nb)          slos                       settings
+  settings-schemas        buckets (bkt)              apps
+  functions (fn, func)    intents                    edgeconnect (ec)
+  users                   groups                     lookup-tables (lu)
+  trash                   azure connection           azure monitoring`,
+	Example: `  # Describe a workflow to see its trigger and task details
+  dtctl describe workflow my-workflow
+
+  # Describe a dashboard by name
+  dtctl describe dashboard "My Dashboard"
+
+  # Describe a bucket to see retention and schema info
+  dtctl describe bucket default
+
+  # Describe an SLO to see its evaluation status
+  dtctl describe slo <slo-id>`,
+	RunE: requireSubcommand,
 }
 
 var describeAzureProviderCmd = &cobra.Command{

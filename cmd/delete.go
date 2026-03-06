@@ -13,8 +13,33 @@ import (
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
 	Short: "Delete resources",
-	Long:  `Delete resources by ID or name.`,
-	RunE:  requireSubcommand,
+	Long: `Delete a resource from the Dynatrace platform by ID or name.
+
+Accepts either a resource ID or name. When a name is provided, dtctl resolves
+it to an ID automatically. Blocked by safety level if the current context is
+set to 'readonly'.
+
+Some resources (dashboards, notebooks) may be recoverable from trash after
+deletion — use 'dtctl get trash' to check.
+
+Supported resources:
+  workflows (wf)          dashboards (dash, db)     notebooks (nb)
+  slos                    settings                  buckets (bkt)
+  apps                    edgeconnect (ec)           notifications
+  lookup-tables (lu)      trash
+  azure connection        azure monitoring`,
+	Example: `  # Delete a workflow by ID
+  dtctl delete workflow abc-123
+
+  # Delete a dashboard by name
+  dtctl delete dashboard "My Dashboard"
+
+  # Delete with dry-run to preview what would be deleted
+  dtctl delete workflow abc-123 --dry-run
+
+  # Permanently remove a trashed document
+  dtctl delete trash <document-id>`,
+	RunE: requireSubcommand,
 }
 
 var deleteAzureProviderCmd = &cobra.Command{

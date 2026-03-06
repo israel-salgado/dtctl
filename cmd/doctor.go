@@ -30,15 +30,12 @@ Checks performed:
   3. Current context is set
   4. Token is retrievable (keyring or config)
   5. Environment URL is reachable (HTTP connectivity)
-  6. API authentication works (user identity)
-
-Examples:
-  # Run all checks
+  6. API authentication works (user identity)`,
+	Example: `  # Run all checks
   dtctl doctor
 
   # Run checks for a specific context
-  dtctl doctor --context production
-`,
+  dtctl doctor --context production`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		results := runDoctorChecks()
 		printDoctorResults(results)

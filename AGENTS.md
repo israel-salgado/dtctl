@@ -18,7 +18,7 @@ pkg/
   ├── client/    # HTTP client (auth, retry, rate limiting, pagination)
   ├── config/    # Multi-context config (~/.config/dtctl/config, keyring tokens)
   ├── resources/ # Resource handlers (one per API)
-  ├── output/    # Formatters (table, JSON, YAML, charts, agent envelope)
+  ├── output/    # Formatters (table, JSON, YAML, charts, agent envelope, color control)
   └── exec/      # DQL query execution
 ```
 
@@ -36,6 +36,21 @@ dtctl supports `--agent` / `-A` to wrap all output in a structured JSON envelope
 - Implementation: `pkg/output/agent.go` (`AgentPrinter`, `Response`, `PrintError`)
 - Per-command context enrichment via `enrichAgent()` helper in `cmd/root.go`
 - **Command catalog**: `dtctl commands --brief -o json` provides a machine-readable listing of all available commands, flags, and resource types — ideal for agent bootstrap
+
+## Color Control
+
+ANSI color output follows the [no-color.org](https://no-color.org/) standard:
+
+```
+Color enabled = NOT (NO_COLOR is set) AND NOT (--plain flag) AND (stdout is a TTY OR FORCE_COLOR=1)
+```
+
+- **`NO_COLOR`** env var: any non-empty value disables color
+- **`FORCE_COLOR=1`** env var: overrides TTY detection to force color on (e.g., in CI with color-capable terminals)
+- **`--plain`** flag: disables color (and interactive prompts)
+- **Non-TTY** (piped output): color is disabled automatically
+- Implementation: `pkg/output/styles.go` (`ColorEnabled()`, `Colorize()`, `ColorCode()`)
+- Result is cached with `sync.Once`; use `ResetColorCache()` in tests
 
 ## Adding a Resource
 

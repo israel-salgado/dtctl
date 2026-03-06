@@ -8,6 +8,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
+- **NO_COLOR support** — Implement the [no-color.org](https://no-color.org/) standard for color control
+  - Color is automatically disabled when stdout is not a TTY (piped output)
+  - `NO_COLOR` environment variable suppresses all ANSI color output
+  - `FORCE_COLOR=1` overrides TTY detection to force color output
+  - `--plain` flag also disables color (existing behavior, now centralized)
+  - Centralized color logic in `pkg/output/styles.go` (`ColorEnabled()`, `Colorize()`, `ColorCode()`)
+  - All color usage across output package updated: styles, charts, sparklines, bar charts, braille graphs, watch mode, live mode
+- **Help text improvements** — Consistent, detailed help across all parent verb commands
+  - All 9 parent verbs (get, delete, create, edit, exec, find, update, open, describe) now have detailed `Long` descriptions and Cobra `Example` fields
+  - Added missing `RunE: requireSubcommand` to `create` and `exec` commands
+  - Migrated `doctor` examples from `Long` to Cobra `Example` field
+  - Added tests enforcing help text coverage (`TestAllCommandsHaveHelpText`, `TestParentVerbsHaveExamples`)
 - **Agent output envelope (`--agent` / `-A`)** — Wrap all CLI output in a structured JSON envelope (`ok`, `result`, `error`, `context`) for AI agents and automation consumers
   - Auto-detects AI agent environments and enables agent mode automatically (opt out with `--no-agent`)
   - Enriched context (suggestions, pagination, warnings) for `get workflows`, `get workflow-executions`, `delete workflow`, and `apply` commands

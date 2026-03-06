@@ -1,6 +1,6 @@
 # dtctl Implementation Status
 
-Last Updated: February 2026
+Last Updated: March 2026
 
 ## Overview
 
@@ -26,6 +26,8 @@ This document tracks the current implementation status of dtctl. For future plan
 - [x] Agent output envelope (`--agent` / `-A`) with auto-detection, structured errors, and per-command context enrichment
 - [x] Enhanced error messages with contextual troubleshooting suggestions
 - [x] Machine-readable command catalog (`dtctl commands`) for AI agent bootstrap
+- [x] [NO_COLOR](https://no-color.org/) standard: color disabled when piped, `NO_COLOR` env var, `FORCE_COLOR=1` override
+- [x] Consistent help text: all parent verb commands have `Long` descriptions and Cobra `Example` fields
 
 ### Verbs Implemented
 - [x] `get` - List/retrieve resources

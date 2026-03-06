@@ -518,3 +518,43 @@ func TestCommandsCmd_ListingCoversAllNonHiddenCommands(t *testing.T) {
 			"non-hidden command %q should be in the listing", name)
 	}
 }
+
+// TestAllCommandsHaveHelpText verifies that all non-hidden, non-utility root
+// commands have Long descriptions and Example fields populated.
+func TestAllCommandsHaveHelpText(t *testing.T) {
+	// Meta/utility commands that are exempt from this requirement
+	metaCommands := map[string]bool{
+		"help":       true,
+		"completion": true,
+		"version":    true,
+		"commands":   true,
+	}
+
+	for _, cmd := range rootCmd.Commands() {
+		if cmd.Hidden || metaCommands[cmd.Name()] {
+			continue
+		}
+		t.Run(cmd.Name(), func(t *testing.T) {
+			require.NotEmpty(t, cmd.Long,
+				"command %q should have a Long description", cmd.Name())
+		})
+	}
+}
+
+// TestParentVerbsHaveExamples verifies that all parent verb commands have
+// examples in the Cobra Example field (not embedded in Long).
+func TestParentVerbsHaveExamples(t *testing.T) {
+	parentVerbs := []string{
+		"get", "delete", "create", "edit", "exec",
+		"describe", "find", "update", "open", "doctor",
+	}
+
+	for _, name := range parentVerbs {
+		cmd, _, err := rootCmd.Find([]string{name})
+		require.NoError(t, err, "command %q should exist", name)
+		t.Run(name, func(t *testing.T) {
+			require.NotEmpty(t, cmd.Example,
+				"parent verb %q should have examples in the Example field", name)
+		})
+	}
+}

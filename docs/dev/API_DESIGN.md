@@ -203,6 +203,12 @@ dtctl query "fetch logs | limit 10"
 # -l, --selector        # Label selector for filtering
 ```
 
+**Color control** follows the [no-color.org](https://no-color.org/) standard:
+- `NO_COLOR` env var (any non-empty value) disables ANSI color output
+- `FORCE_COLOR=1` env var overrides TTY detection to force color on
+- Color is automatically disabled when stdout is not a TTY (piped output)
+- `--plain` flag also disables color (and interactive prompts)
+
 ### Agent Mode (`--agent` / `-A`)
 
 When `--agent` (or `-A`) is passed, all CLI output is wrapped in a structured JSON envelope designed for AI agents and automation consumers:
@@ -1631,6 +1637,8 @@ HOST-B  ████████████████████████
 **Note**: All timeseries output formats (`chart`, `sparkline`, `barchart`) require timeseries data 
 (records with `timeframe` and `interval` fields). If the data is not timeseries, they fall back 
 to JSON output with a warning. When more than 10 series are present, only the first 10 are displayed.
+
+**Color**: Charts, sparklines, bar charts, and watch mode use ANSI colors when enabled. Color follows the [no-color.org](https://no-color.org/) standard — it is automatically disabled when piped, when `NO_COLOR` is set, or when `--plain` is used. Set `FORCE_COLOR=1` to override TTY detection.
 
 ## Examples
 

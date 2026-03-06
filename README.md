@@ -32,6 +32,7 @@ dtctl exec copilot nl2dql "error logs from last hour"
 - **Multi-environment** — Switch between dev/staging/prod with a single command
 - **Template support** — DQL queries with Go template variables
 - **Shell completion** — Tab completion for bash, zsh, fish, and PowerShell
+- **[NO_COLOR](https://no-color.org/) support** — Color is automatically disabled when piped; respects `NO_COLOR` env var and `FORCE_COLOR=1` override
 
 ## AI Agent Skill
 
