@@ -255,6 +255,7 @@ func (h *Handler) executeGraphQL(query string, variables map[string]interface{})
 	var response map[string]interface{}
 	resp, err := h.client.HTTP().R().
 		SetHeader("Content-Type", "application/json").
+		SetHeader("dt-external-source", "dtctl").
 		SetBody(requestBody).
 		SetResult(&response).
 		Post(h.graphqlURL)
