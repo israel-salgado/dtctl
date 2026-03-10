@@ -347,9 +347,7 @@ func metadataFieldCompletion(_ *cobra.Command, _ []string, toComplete string) ([
 	if toComplete == "" {
 		suggestions := make([]string, 0, len(allFields)+1)
 		suggestions = append(suggestions, "all\tInclude all metadata fields")
-		for _, f := range allFields {
-			suggestions = append(suggestions, f)
-		}
+		suggestions = append(suggestions, allFields...)
 		return suggestions, cobra.ShellCompDirectiveNoFileComp | cobra.ShellCompDirectiveNoSpace
 	}
 

@@ -355,7 +355,7 @@ type DQLExecuteOptions struct {
 
 | Function | Purpose |
 |----------|---------|
-| `ParseMetadataFields(input string) ([]string, error)` | Parses comma-separated field names, validates against known fields, returns error with suggestions for unknown fields (single-line error format with `; ` separator) |
+| `ParseMetadataFields(input string) ([]string, error)` | Parses comma-separated field names, validates against known fields, returns error with suggestions for unknown fields (single-line error format with semicolon-space separator) |
 | `MetadataToMap(meta *QueryMetadata, fields []string) interface{}` | Returns a `map[string]interface{}` for explicit field selection (preserves zero values) or the struct pointer for `"all"` (lets `omitempty` clean up zeros) |
 | `FormatMetadataFooter(meta *QueryMetadata, fields []string) string` | Formats human-friendly footer for table/wide output. Uses `hasField()` internally to filter by selected fields |
 | `FormatMetadataCSVComments(meta *QueryMetadata, fields []string) string` | Formats `#`-prefixed comment lines for CSV output. Uses `hasField()` internally to filter by selected fields |
@@ -392,7 +392,7 @@ type DQLExecuteOptions struct {
 ### Phase 3: Quality pass ✅
 1. Fixed omitempty bug — added `MetadataToMap()` for zero-value preservation.
 2. Removed dead code — `SetQueryMetadata()` and `ResponseContext.QueryMetadata`.
-3. Fixed error message format — `\n` → `; ` per Go convention.
+3. Fixed error message format — `\n` → `"; "` per Go convention.
 4. Added YAML struct tags (`yaml:"...,omitempty"`) alongside JSON tags.
 5. Removed redundant `FilterMetadata()` call from `printResults()`.
 
@@ -421,7 +421,7 @@ type DQLExecuteOptions struct {
 4. **Wide vs. table:** Functionally identical for DQL queries — same metadata footer.
 5. **Field selection:** `--metadata=field1,field2` selects specific fields. `--metadata` alone means all fields.
 6. **Zero-value preservation:** `MetadataToMap()` returns a map for explicit selection (zero values preserved) vs. struct for "all" (`omitempty` applies).
-7. **Error message format:** Single-line with `; ` separator, per Go convention.
+7. **Error message format:** Single-line with `"; "` separator, per Go convention.
 8. **No auto `--include-contributions`:** User must explicitly pass `--include-contributions` to get contribution data from the API; `--metadata` alone does not trigger it.
 9. **Agent envelope structure:** Metadata goes into the `result` payload (via `JSONPrinter`), not into `context`. `ResponseContext.QueryMetadata` was removed as dead code.
 10. **All 13 fields in `--help`:** All field names are listed in the flag description for discoverability.
