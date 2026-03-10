@@ -174,3 +174,46 @@ func TestParseBreakpoint(t *testing.T) {
 		})
 	}
 }
+
+func TestUseBreakpointTableView(t *testing.T) {
+	originalFormat := outputFormat
+	defer func() { outputFormat = originalFormat }()
+
+	tests := []struct {
+		name   string
+		format string
+		want   bool
+	}{
+		{name: "default", format: "", want: true},
+		{name: "table", format: "table", want: true},
+		{name: "wide", format: "wide", want: true},
+		{name: "csv", format: "csv", want: true},
+		{name: "json", format: "json", want: false},
+		{name: "yaml", format: "yaml", want: false},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			outputFormat = tt.format
+			if got := useBreakpointTableView(); got != tt.want {
+				t.Fatalf("useBreakpointTableView() = %v, want %v", got, tt.want)
+			}
+		})
+	}
+}
+
+func TestBuildGraphQLResponse(t *testing.T) {
+	payload := map[string]interface{}{"data": "value"}
+	wrapper := buildGraphQLResponse("getWorkspaceRules", payload)
+
+	if wrapper["operation"] != "getWorkspaceRules" {
+		t.Fatalf("unexpected operation: %#v", wrapper["operation"])
+	}
+	response, ok := wrapper["response"].(map[string]interface{})
+	if !ok {
+		t.Fatalf("unexpected response type: %#v", wrapper["response"])
+	}
+	if response["data"] != payload["data"] {
+		t.Fatalf("unexpected response payload: %#v", response)
+	}
+}

@@ -243,6 +243,79 @@ func (h *Handler) DeleteBreakpoint(workspaceID, ruleID string) (map[string]inter
 	return h.executeGraphQL(mutation, variables)
 }
 
+func (h *Handler) EditBreakpoint(workspaceID string, ruleSettings map[string]interface{}) (map[string]interface{}, error) {
+	mutation := `mutation EditRuleV2($orgId: ID!, $workspaceId: ID!, $ruleSettings: EditRuleV2Input!) {
+	org(orgId: $orgId) {
+		workspace(id: $workspaceId) {
+			editRuleV2(data: $ruleSettings) {
+				id
+				immutableId
+				template_id
+				template_type
+				selector
+				workspace
+				user_email
+				workspace_name
+				aug {
+					id
+					mutable_id
+					location {
+						name
+						filename
+						sourcePath
+						sourceRepo
+						lineno
+						sha256
+						includeExternals
+					}
+					action {
+						name
+						operations
+					}
+					conditional
+					originalCondition
+				}
+				is_disabled
+				disable_reason
+				revision_count
+				processing
+			}
+		}
+	}
+}`
+
+	variables := map[string]interface{}{
+		"orgId":        h.orgID,
+		"workspaceId":  workspaceID,
+		"ruleSettings": ruleSettings,
+	}
+
+	return h.executeGraphQL(mutation, variables)
+}
+
+func (h *Handler) EnableOrDisableBreakpoints(workspaceID string, ruleIDs []string, isDisabled bool) (map[string]interface{}, error) {
+	mutation := `mutation EnableOrDisableRules($orgId: ID!, $workspaceId: ID!, $rulesIds: [String]!, $isDisabled: Boolean!) {
+	org(orgId: $orgId) {
+		workspace(id: $workspaceId) {
+			enableOrDisableRules(isDisabled: $isDisabled, rulesIds: $rulesIds) {
+				id
+				immutableId
+				is_disabled
+			}
+		}
+	}
+}`
+
+	variables := map[string]interface{}{
+		"orgId":       h.orgID,
+		"workspaceId": workspaceID,
+		"rulesIds":    ruleIDs,
+		"isDisabled":  isDisabled,
+	}
+
+	return h.executeGraphQL(mutation, variables)
+}
+
 func (h *Handler) DeleteAllBreakpoints(workspaceID string) (map[string]interface{}, error) {
 	mutation := `mutation DeleteAllRulesFromWorkspace($orgId: ID!, $workspaceId: ID!, $data: DeleteWorkspaceRulesInput!) {
   org(orgId: $orgId) {
