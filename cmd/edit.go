@@ -37,5 +37,6 @@ func init() {
 	editCmd.AddCommand(editWorkflowCmd)
 	editCmd.AddCommand(editDashboardCmd)
 	editCmd.AddCommand(editNotebookCmd)
+	editCmd.AddCommand(editDocumentCmd)
 	editCmd.AddCommand(editSettingCmd)
 }

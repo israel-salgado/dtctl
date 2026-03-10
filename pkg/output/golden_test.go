@@ -418,6 +418,65 @@ func TestGolden_GetDocuments(t *testing.T) {
 	}
 }
 
+func genericDocumentFixtures() []document.Document {
+	return []document.Document{
+		{
+			ID:        "aaaaaaaa-1111-2222-3333-444444444444",
+			Name:      "My Launchpad",
+			Type:      "launchpad",
+			Owner:     "user-a@example.invalid",
+			IsPrivate: false,
+			Created:   fixedTime,
+			Version:   1,
+			Modified:  fixedTime.Add(time.Hour),
+		},
+		{
+			ID:          "bbbbbbbb-2222-3333-4444-555555555555",
+			Name:        "App Config",
+			Type:        "my-app:config",
+			Owner:       "user-b@example.invalid",
+			IsPrivate:   true,
+			Created:     fixedTime.Add(-48 * time.Hour),
+			Description: "Configuration for my custom app",
+			Version:     2,
+			Modified:    fixedTime.Add(-24 * time.Hour),
+		},
+		{
+			ID:        "cccccccc-3333-4444-5555-666666666666",
+			Name:      "Production Overview",
+			Type:      "dashboard",
+			Owner:     "user-c@example.invalid",
+			IsPrivate: false,
+			Created:   fixedTime.Add(-72 * time.Hour),
+			Version:   5,
+			Modified:  fixedTime.Add(-2 * time.Hour),
+		},
+	}
+}
+
+func TestGolden_GetDocumentsGeneric(t *testing.T) {
+	docs := genericDocumentFixtures()
+
+	formats := map[string]string{
+		"table": "table",
+		"wide":  "wide",
+		"json":  "json",
+		"yaml":  "yaml",
+		"csv":   "csv",
+	}
+
+	for name, format := range formats {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			printer := NewPrinterWithWriter(format, &buf)
+			if err := printer.PrintList(docs); err != nil {
+				t.Fatalf("PrintList failed: %v", err)
+			}
+			assertGolden(t, "get/documents-generic-"+name, buf.String())
+		})
+	}
+}
+
 func TestGolden_GetSettings(t *testing.T) {
 	objs := settingsFixtures()
 

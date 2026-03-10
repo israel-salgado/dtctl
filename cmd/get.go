@@ -136,6 +136,7 @@ func init() {
 	getCmd.AddCommand(getCopilotSkillsCmd)
 	getCmd.AddCommand(getSettingsSchemasCmd)
 	getCmd.AddCommand(getSettingsCmd)
+	getCmd.AddCommand(getDocumentsCmd)
 
 	// Delete subcommands (command definitions live in get_*.go files)
 	deleteCmd.AddCommand(deleteWorkflowCmd)
@@ -149,4 +150,5 @@ func init() {
 	deleteCmd.AddCommand(deleteSettingsCmd)
 	deleteCmd.AddCommand(deleteAppCmd)
 	deleteCmd.AddCommand(deleteEdgeConnectCmd)
+	deleteCmd.AddCommand(deleteDocumentCmd)
 }

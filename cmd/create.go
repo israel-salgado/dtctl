@@ -39,6 +39,7 @@ func init() {
 	createCmd.AddCommand(createWorkflowCmd)
 	createCmd.AddCommand(createNotebookCmd)
 	createCmd.AddCommand(createDashboardCmd)
+	createCmd.AddCommand(createDocumentCmd)
 	createCmd.AddCommand(createSettingsCmd)
 	createCmd.AddCommand(createSLOCmd)
 	createCmd.AddCommand(createBucketCmd)
