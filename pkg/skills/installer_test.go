@@ -566,27 +566,6 @@ func TestSkillContent_ContainsMainSections(t *testing.T) {
 	}
 }
 
-func TestSkillContent_ContainsReferenceContent(t *testing.T) {
-	content := SkillContent()
-
-	// Must contain content from each reference file
-	referenceMarkers := []struct {
-		file   string
-		marker string
-	}{
-		{"DQL-reference.md", "DQL Syntax Guide"},
-		{"troubleshooting.md", "dtctl Troubleshooting"},
-		{"config-management.md", "Configuration Management"},
-		{"dashboards.md", "Dashboards Resource"},
-		{"notebooks.md", "Notebooks Resource"},
-	}
-	for _, rm := range referenceMarkers {
-		if !strings.Contains(content, rm.marker) {
-			t.Errorf("SkillContent() should contain %q from %s", rm.marker, rm.file)
-		}
-	}
-}
-
 func TestSkillContent_NoYAMLFrontmatter(t *testing.T) {
 	content := SkillContent()
 
@@ -612,26 +591,14 @@ func TestSkillContent_NoRelativeLinks(t *testing.T) {
 	}
 }
 
-func TestSkillContent_HasSeparators(t *testing.T) {
-	content := SkillContent()
-
-	// Reference sections should be separated by horizontal rules
-	separatorCount := strings.Count(content, "\n\n---\n\n")
-	if separatorCount < len(referenceFiles) {
-		t.Errorf("expected at least %d section separators, got %d",
-			len(referenceFiles), separatorCount)
-	}
-}
-
 func TestSkillContent_SubstantialSize(t *testing.T) {
 	content := SkillContent()
 
-	// The concatenated content should be much larger than the old templates.
-	// The source files total ~1,115 lines. With separators, we expect at
-	// least 800 lines (some frontmatter is stripped).
+	// SKILL.md is ~287 lines; after stripping the 4-line YAML frontmatter
+	// the output should be at least 200 lines.
 	lines := strings.Count(content, "\n")
-	if lines < 800 {
-		t.Errorf("SkillContent() has only %d lines, expected 800+ (comprehensive skill content)", lines)
+	if lines < 200 {
+		t.Errorf("SkillContent() has only %d lines, expected 200+", lines)
 	}
 }
 
@@ -727,7 +694,7 @@ func TestResolveRelativeLinks(t *testing.T) {
 }
 
 func TestInstalledFileContent(t *testing.T) {
-	// Verify that installed files contain the full comprehensive content
+	// Verify that installed files contain the core skill content.
 	for _, agent := range AllAgents() {
 		t.Run(agent.Name, func(t *testing.T) {
 			tmpDir := t.TempDir()
@@ -743,14 +710,11 @@ func TestInstalledFileContent(t *testing.T) {
 
 			content := string(data)
 
-			// Must contain comprehensive content, not just stubs
+			// Must contain SKILL.md core content
 			mustContain := []string{
 				"Dynatrace Control with dtctl",
-				"DQL Syntax Guide",
-				"dtctl Troubleshooting",
-				"Configuration Management",
-				"Dashboards Resource",
-				"Notebooks Resource",
+				"Available Resources",
+				"Command Verbs",
 			}
 			for _, s := range mustContain {
 				if !strings.Contains(content, s) {
@@ -758,10 +722,10 @@ func TestInstalledFileContent(t *testing.T) {
 				}
 			}
 
-			// Installed files should be substantial (800+ lines)
+			// Installed files should be at least 200 lines
 			lines := strings.Count(content, "\n")
-			if lines < 800 {
-				t.Errorf("installed %s file has only %d lines, expected 800+", agent.Name, lines)
+			if lines < 200 {
+				t.Errorf("installed %s file has only %d lines, expected 200+", agent.Name, lines)
 			}
 		})
 	}

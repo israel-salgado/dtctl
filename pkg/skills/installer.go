@@ -1,7 +1,6 @@
 // Package skills provides installation and management of AI coding assistant
-// skill files for dtctl. It embeds the full skill content from skills/dtctl/
-// (SKILL.md and all reference files) and concatenates them into a single
-// document at install time, with agent-specific wrappers.
+// skill files for dtctl. It embeds SKILL.md from skills/dtctl/ and writes it
+// to the appropriate agent-specific location with agent-specific wrappers.
 package skills
 
 import (
@@ -17,27 +16,7 @@ import (
 	dtctlskill "github.com/dynatrace-oss/dtctl/skills/dtctl"
 )
 
-// referenceFile defines a reference document to append after SKILL.md.
-// The order here determines the order in the concatenated output.
-type referenceFile struct {
-	// Path within the embedded FS.
-	Path string
-	// SectionTitle is the heading used when inlining this file.
-	// If empty, the file's first H1 heading is used.
-	SectionTitle string
-}
-
-// referenceFiles lists all reference documents to concatenate after SKILL.md,
-// in the order they should appear in the output.
-var referenceFiles = []referenceFile{
-	{Path: "references/DQL-reference.md"},
-	{Path: "references/troubleshooting.md"},
-	{Path: "references/config-management.md"},
-	{Path: "references/resources/dashboards.md"},
-	{Path: "references/resources/notebooks.md"},
-}
-
-// skillContent holds the concatenated skill document, built once at init time.
+// skillContent holds the skill document, built once at init time.
 var skillContent string
 
 func init() {
@@ -48,48 +27,16 @@ func init() {
 	skillContent = content
 }
 
-// buildSkillContent reads the embedded SKILL.md and all reference files,
-// strips YAML frontmatter, resolves relative markdown links, and
-// concatenates everything into a single document.
+// buildSkillContent reads the embedded SKILL.md, strips YAML frontmatter,
+// and resolves relative markdown links.
 func buildSkillContent() (string, error) {
-	// Read main SKILL.md
-	mainBytes, err := fs.ReadFile(dtctlskill.Content, "SKILL.md")
+	data, err := fs.ReadFile(dtctlskill.Content, "SKILL.md")
 	if err != nil {
 		return "", fmt.Errorf("reading SKILL.md: %w", err)
 	}
-	main := stripYAMLFrontmatter(string(mainBytes))
-
-	// Read all reference files
-	var refs []string
-	for _, ref := range referenceFiles {
-		data, err := fs.ReadFile(dtctlskill.Content, ref.Path)
-		if err != nil {
-			return "", fmt.Errorf("reading %s: %w", ref.Path, err)
-		}
-		content := string(data)
-		// Strip any YAML frontmatter from reference files too
-		content = stripYAMLFrontmatter(content)
-		refs = append(refs, content)
-	}
-
-	// Resolve relative markdown links in main — since reference content
-	// will be appended inline, links like [text](references/foo.md) become
-	// just the link text.
-	main = resolveRelativeLinks(main)
-
-	// Build the concatenated document
-	var sb strings.Builder
-	sb.WriteString(main)
-
-	for i, ref := range refs {
-		sb.WriteString("\n\n---\n\n")
-		// Resolve any cross-references between reference files
-		ref = resolveRelativeLinks(ref)
-		_ = i // index available for future use
-		sb.WriteString(ref)
-	}
-
-	return sb.String(), nil
+	content := stripYAMLFrontmatter(string(data))
+	content = resolveRelativeLinks(content)
+	return content, nil
 }
 
 // yamlFrontmatterRE matches YAML frontmatter at the start of a document:

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.14.4] - 2026-03-10
+
+### Changed
+- **`dtctl skills install` minimal output** — installed skill files now contain only `SKILL.md` (~283 lines / ~10 KB) instead of inlining all reference documents (~1,100 lines / ~35 KB); reference docs remain embedded in the binary but are no longer concatenated into the installed file
+
 ## [0.14.3] - 2026-03-10
 
 ### Fixed
