@@ -17,7 +17,8 @@ var describeCmd = &cobra.Command{
 	Use:   "describe",
 	Short: "Show details of a specific resource",
 	Long:  `Show detailed information about a specific resource.`,
-	RunE:  requireSubcommand,
+	Args:  cobra.MaximumNArgs(1),
+	RunE:  runDescribeCommand,
 }
 
 var describeAzureProviderCmd = &cobra.Command{

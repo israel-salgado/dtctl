@@ -243,6 +243,75 @@ func (h *Handler) DeleteBreakpoint(workspaceID, ruleID string) (map[string]inter
 	return h.executeGraphQL(mutation, variables)
 }
 
+func (h *Handler) GetRuleStatusBreakdown(ruleID string) (map[string]interface{}, error) {
+	query := `query GetRuleStatusBreakdown($orgId: ID!, $ruleId: ID!) {
+	org(id: $orgId) {
+		id
+		ruleStatuses(mutableId: $ruleId) {
+			ruleId
+			status
+			rookStatuses {
+				rook {
+					id
+					executable
+					hostname
+				}
+				error {
+					message
+					type
+					parameters
+					summary {
+						title
+						description
+						docsLink
+						args
+					}
+				}
+				tips {
+					description
+					docsLink
+				}
+			}
+			agentStatuses {
+				controllerId
+				error {
+					message
+					type
+					parameters
+					summary {
+						title
+						description
+						docsLink
+						args
+					}
+				}
+			}
+			controllerStatuses {
+				controllerId
+				error {
+					message
+					type
+					parameters
+					summary {
+						title
+						description
+						docsLink
+						args
+					}
+				}
+			}
+		}
+	}
+}`
+
+	variables := map[string]interface{}{
+		"orgId":  h.orgID,
+		"ruleId": ruleID,
+	}
+
+	return h.executeGraphQL(query, variables)
+}
+
 func (h *Handler) EditBreakpoint(workspaceID string, ruleSettings map[string]interface{}) (map[string]interface{}, error) {
 	mutation := `mutation EditRuleV2($orgId: ID!, $workspaceId: ID!, $ruleSettings: EditRuleV2Input!) {
 	org(orgId: $orgId) {
