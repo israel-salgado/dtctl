@@ -130,6 +130,7 @@ This document tracks the current implementation status of dtctl. For future plan
 - [x] Watch mode with incremental updates: `--watch`, `--interval`
 - [x] Customizable chart dimensions: `--width`, `--height`, `--fullscreen`
 - [x] Custom record/byte/scan limits
+- [x] Query metadata output: `--metadata` / `-M` with field selection
 
 ### SLO Features
 - [x] List SLOs: `dtctl get slos`

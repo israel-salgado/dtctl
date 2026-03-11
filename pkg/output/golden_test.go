@@ -594,6 +594,165 @@ func TestGolden_QueryDQL(t *testing.T) {
 }
 
 // ---------------------------------------------------------------------------
+// Golden tests: DQL query results with metadata
+// ---------------------------------------------------------------------------
+
+func metadataFixture() *QueryMetadata {
+	return &QueryMetadata{
+		ExecutionTimeMilliseconds: 47,
+		ScannedRecords:            42351,
+		ScannedBytes:              2982690,
+		ScannedDataPoints:         0,
+		Sampled:                   false,
+		QueryID:                   "27c4daf9-2619-4ba1-b1ad-9e276c75a351",
+		DQLVersion:                "V1_0",
+		Query:                     "fetch logs | limit 3 | fields timestamp, host.name, status, content",
+		CanonicalQuery:            "fetch logs\n| limit 3\n| fields timestamp, host.name, status, content",
+		Timezone:                  "Z",
+		Locale:                    "und",
+		AnalysisTimeframe: &MetadataTimeframe{
+			Start: "2025-03-15T08:30:00.000000000Z",
+			End:   "2025-03-15T10:30:00.000000000Z",
+		},
+		Contributions: &MetadataContribs{
+			Buckets: []MetadataBucket{
+				{
+					Name:                "default_logs",
+					Table:               "logs",
+					ScannedBytes:        2982690,
+					MatchedRecordsRatio: 1.0,
+				},
+			},
+		},
+	}
+}
+
+func TestGolden_QueryDQL_Metadata_JSON(t *testing.T) {
+	records := dqlRecordsFixture()
+	meta := metadataFixture()
+
+	t.Run("all", func(t *testing.T) {
+		// "all" returns the struct (omitempty suppresses zeros)
+		payload := map[string]interface{}{
+			"records":  records,
+			"metadata": MetadataToMap(meta, []string{"all"}),
+		}
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("json", &buf)
+		if err := printer.Print(payload); err != nil {
+			t.Fatalf("Print failed: %v", err)
+		}
+		assertGolden(t, "query/dql-metadata-json", buf.String())
+	})
+
+	t.Run("filtered", func(t *testing.T) {
+		// Explicit field selection including a zero-value field (scannedDataPoints=0)
+		fields := []string{"executionTimeMilliseconds", "scannedRecords", "scannedDataPoints", "sampled", "queryId"}
+		payload := map[string]interface{}{
+			"records":  records,
+			"metadata": MetadataToMap(meta, fields),
+		}
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("json", &buf)
+		if err := printer.Print(payload); err != nil {
+			t.Fatalf("Print failed: %v", err)
+		}
+		assertGolden(t, "query/dql-metadata-filtered-json", buf.String())
+	})
+}
+
+func TestGolden_QueryDQL_Metadata_YAML(t *testing.T) {
+	records := dqlRecordsFixture()
+	meta := metadataFixture()
+
+	t.Run("all", func(t *testing.T) {
+		payload := map[string]interface{}{
+			"records":  records,
+			"metadata": MetadataToMap(meta, []string{"all"}),
+		}
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("yaml", &buf)
+		if err := printer.Print(payload); err != nil {
+			t.Fatalf("Print failed: %v", err)
+		}
+		assertGolden(t, "query/dql-metadata-yaml", buf.String())
+	})
+
+	t.Run("filtered", func(t *testing.T) {
+		fields := []string{"executionTimeMilliseconds", "scannedRecords", "scannedDataPoints", "sampled", "queryId"}
+		payload := map[string]interface{}{
+			"records":  records,
+			"metadata": MetadataToMap(meta, fields),
+		}
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("yaml", &buf)
+		if err := printer.Print(payload); err != nil {
+			t.Fatalf("Print failed: %v", err)
+		}
+		assertGolden(t, "query/dql-metadata-filtered-yaml", buf.String())
+	})
+}
+
+func TestGolden_QueryDQL_Metadata_Table(t *testing.T) {
+	records := dqlRecordsFixture()
+	meta := metadataFixture()
+
+	// Disable color for deterministic output
+	ResetColorCache()
+	SetPlainMode(true)
+	defer ResetColorCache()
+
+	t.Run("all", func(t *testing.T) {
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("table", &buf)
+		if err := printer.PrintList(records); err != nil {
+			t.Fatalf("PrintList failed: %v", err)
+		}
+		// Append metadata footer (same as printResults does)
+		footer := FormatMetadataFooter(meta, nil)
+		assertGolden(t, "query/dql-metadata-table", buf.String()+footer)
+	})
+
+	t.Run("filtered", func(t *testing.T) {
+		fields := []string{"executionTimeMilliseconds", "scannedRecords", "queryId"}
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("table", &buf)
+		if err := printer.PrintList(records); err != nil {
+			t.Fatalf("PrintList failed: %v", err)
+		}
+		footer := FormatMetadataFooter(meta, fields)
+		assertGolden(t, "query/dql-metadata-filtered-table", buf.String()+footer)
+	})
+}
+
+func TestGolden_QueryDQL_Metadata_CSV(t *testing.T) {
+	records := dqlRecordsFixture()
+	meta := metadataFixture()
+
+	t.Run("all", func(t *testing.T) {
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("csv", &buf)
+		if err := printer.PrintList(records); err != nil {
+			t.Fatalf("PrintList failed: %v", err)
+		}
+		// Prepend metadata comments (same as printResults does)
+		comments := FormatMetadataCSVComments(meta, nil)
+		assertGolden(t, "query/dql-metadata-csv", comments+buf.String())
+	})
+
+	t.Run("filtered", func(t *testing.T) {
+		fields := []string{"executionTimeMilliseconds", "scannedRecords", "queryId"}
+		var buf bytes.Buffer
+		printer := NewPrinterWithWriter("csv", &buf)
+		if err := printer.PrintList(records); err != nil {
+			t.Fatalf("PrintList failed: %v", err)
+		}
+		comments := FormatMetadataCSVComments(meta, fields)
+		assertGolden(t, "query/dql-metadata-filtered-csv", comments+buf.String())
+	})
+}
+
+// ---------------------------------------------------------------------------
 // Golden tests: empty results
 // ---------------------------------------------------------------------------
 

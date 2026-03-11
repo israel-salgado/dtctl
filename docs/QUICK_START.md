@@ -1108,6 +1108,10 @@ dtctl query "fetch logs | filter status='ERROR'" \
 - `--locale`: Query locale (e.g., 'en_US', 'de_DE')
 - `--timezone`: Query timezone (e.g., 'UTC', 'Europe/Paris', 'America/New_York')
 
+**Metadata Parameters:**
+- `--metadata`, `-M`: Include query execution metadata in output. Use bare `--metadata` for all fields, or select specific fields with `--metadata=field1,field2`. Valid fields: `analysisTimeframe`, `canonicalQuery`, `contributions`, `dqlVersion`, `executionTimeMilliseconds`, `locale`, `query`, `queryId`, `sampled`, `scannedBytes`, `scannedDataPoints`, `scannedRecords`, `timezone`
+- `--include-contributions`: Include bucket contribution details in metadata (requires API support)
+
 **Note:** All parameters are sent in the DQL query request body and work with both immediate responses and long-running queries that require polling.
 
 **Advanced Query Examples:**

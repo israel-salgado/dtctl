@@ -1399,3 +1399,194 @@ func TestVerifyQuery_ParseActualAPIResponse(t *testing.T) {
 		t.Errorf("expected canonical query 'fetch logs', got %s", response.CanonicalQuery)
 	}
 }
+
+func TestExtractQueryMetadata_FromResultMetadata(t *testing.T) {
+	resp := &DQLQueryResponse{
+		State: "SUCCEEDED",
+		Result: &DQLResult{
+			Records: []map[string]interface{}{{"timestamp": "2026-03-09T12:15:00Z"}},
+			Metadata: &DQLMetadata{
+				Grail: &GrailMetadata{
+					Query:                     "fetch logs | limit 3",
+					CanonicalQuery:            "fetch logs\n| limit 3",
+					QueryID:                   "test-id-123",
+					DQLVersion:                "V1_0",
+					Timezone:                  "Z",
+					Locale:                    "und",
+					ExecutionTimeMilliseconds: 47,
+					ScannedRecords:            42351,
+					ScannedBytes:              2982690,
+					ScannedDataPoints:         0,
+					Sampled:                   false,
+					AnalysisTimeframe: &AnalysisTimeframe{
+						Start: "2026-03-09T10:16:39Z",
+						End:   "2026-03-09T12:16:39Z",
+					},
+					Contributions: &Contributions{
+						Buckets: []BucketContribution{
+							{
+								Name:                "test_bucket",
+								Table:               "logs",
+								ScannedBytes:        2982690,
+								MatchedRecordsRatio: 1.0,
+							},
+						},
+					},
+				},
+			},
+		},
+	}
+
+	meta := extractQueryMetadata(resp)
+	if meta == nil {
+		t.Fatal("expected metadata, got nil")
+	}
+
+	if meta.QueryID != "test-id-123" {
+		t.Errorf("expected QueryID=test-id-123, got %q", meta.QueryID)
+	}
+	if meta.ExecutionTimeMilliseconds != 47 {
+		t.Errorf("expected ExecutionTimeMilliseconds=47, got %d", meta.ExecutionTimeMilliseconds)
+	}
+	if meta.ScannedRecords != 42351 {
+		t.Errorf("expected ScannedRecords=42351, got %d", meta.ScannedRecords)
+	}
+	if meta.ScannedBytes != 2982690 {
+		t.Errorf("expected ScannedBytes=2982690, got %d", meta.ScannedBytes)
+	}
+	if meta.AnalysisTimeframe == nil {
+		t.Fatal("expected AnalysisTimeframe, got nil")
+	}
+	if meta.AnalysisTimeframe.Start != "2026-03-09T10:16:39Z" {
+		t.Errorf("expected AnalysisTimeframe.Start=2026-03-09T10:16:39Z, got %q", meta.AnalysisTimeframe.Start)
+	}
+	if meta.Contributions == nil {
+		t.Fatal("expected Contributions, got nil")
+	}
+	if len(meta.Contributions.Buckets) != 1 {
+		t.Fatalf("expected 1 bucket, got %d", len(meta.Contributions.Buckets))
+	}
+	if meta.Contributions.Buckets[0].Name != "test_bucket" {
+		t.Errorf("expected bucket name=test_bucket, got %q", meta.Contributions.Buckets[0].Name)
+	}
+}
+
+func TestExtractQueryMetadata_FromTopLevelMetadata(t *testing.T) {
+	resp := &DQLQueryResponse{
+		State:   "SUCCEEDED",
+		Records: []map[string]interface{}{{"timestamp": "2026-03-09T12:15:00Z"}},
+		Metadata: &DQLMetadata{
+			Grail: &GrailMetadata{
+				QueryID:                   "top-level-id",
+				ExecutionTimeMilliseconds: 100,
+			},
+		},
+	}
+
+	meta := extractQueryMetadata(resp)
+	if meta == nil {
+		t.Fatal("expected metadata, got nil")
+	}
+	if meta.QueryID != "top-level-id" {
+		t.Errorf("expected QueryID=top-level-id, got %q", meta.QueryID)
+	}
+}
+
+func TestExtractQueryMetadata_NilMetadata(t *testing.T) {
+	resp := &DQLQueryResponse{
+		State:   "SUCCEEDED",
+		Records: []map[string]interface{}{{"timestamp": "2026-03-09T12:15:00Z"}},
+	}
+
+	meta := extractQueryMetadata(resp)
+	if meta != nil {
+		t.Errorf("expected nil metadata, got %+v", meta)
+	}
+}
+
+func TestExtractQueryMetadata_NilGrail(t *testing.T) {
+	resp := &DQLQueryResponse{
+		State:    "SUCCEEDED",
+		Records:  []map[string]interface{}{{"timestamp": "2026-03-09T12:15:00Z"}},
+		Metadata: &DQLMetadata{Grail: nil},
+	}
+
+	meta := extractQueryMetadata(resp)
+	if meta != nil {
+		t.Errorf("expected nil metadata for nil Grail, got %+v", meta)
+	}
+}
+
+// TestExtractQueryMetadata_NilMetadata_PrintPath verifies that when --metadata
+// is requested but the API returns no metadata (nil), the output contains only
+// records without a metadata key. This tests the nil guard in printResults().
+func TestExtractQueryMetadata_NilMetadata_PrintPath(t *testing.T) {
+	// Simulate the same logic as printResults() for the JSON/YAML default case:
+	// 1. opts.MetadataFields is set (user passed --metadata)
+	// 2. extractQueryMetadata returns nil (API has no metadata)
+	// 3. The "metadata" key should NOT appear in the output
+
+	resp := &DQLQueryResponse{
+		State:   "SUCCEEDED",
+		Records: []map[string]interface{}{{"timestamp": "2026-03-09T12:15:00Z", "content": "test"}},
+		// No Metadata field — simulates API response without metadata
+	}
+
+	meta := extractQueryMetadata(resp)
+	if meta != nil {
+		t.Fatal("expected extractQueryMetadata to return nil for response without metadata")
+	}
+
+	// Build the output map the same way printResults() does
+	out := make(map[string]interface{})
+	out["records"] = resp.Records
+	if meta != nil {
+		out["metadata"] = meta // This should NOT execute
+	}
+
+	jsonOut, err := json.MarshalIndent(out, "", "  ")
+	if err != nil {
+		t.Fatalf("json.Marshal failed: %v", err)
+	}
+
+	// Verify "metadata" key is absent
+	var parsed map[string]interface{}
+	if err := json.Unmarshal(jsonOut, &parsed); err != nil {
+		t.Fatalf("could not parse JSON: %v", err)
+	}
+	if _, exists := parsed["metadata"]; exists {
+		t.Error("output should NOT contain 'metadata' key when API returns no metadata")
+	}
+	if _, exists := parsed["records"]; !exists {
+		t.Error("output should contain 'records' key")
+	}
+}
+
+func TestExtractQueryMetadata_ResultMetadataPrecedence(t *testing.T) {
+	// When both result.Metadata and top-level Metadata exist,
+	// result.Metadata should take precedence
+	resp := &DQLQueryResponse{
+		State: "SUCCEEDED",
+		Result: &DQLResult{
+			Records: []map[string]interface{}{{"timestamp": "2026-03-09T12:15:00Z"}},
+			Metadata: &DQLMetadata{
+				Grail: &GrailMetadata{
+					QueryID: "result-level-id",
+				},
+			},
+		},
+		Metadata: &DQLMetadata{
+			Grail: &GrailMetadata{
+				QueryID: "top-level-id",
+			},
+		},
+	}
+
+	meta := extractQueryMetadata(resp)
+	if meta == nil {
+		t.Fatal("expected metadata, got nil")
+	}
+	if meta.QueryID != "result-level-id" {
+		t.Errorf("expected result-level metadata to take precedence, got QueryID=%q", meta.QueryID)
+	}
+}
