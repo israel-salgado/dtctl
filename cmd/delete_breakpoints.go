@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"strings"
 
+	"github.com/dynatrace-oss/dtctl/pkg/config"
 	"github.com/dynatrace-oss/dtctl/pkg/prompt"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/livedebugger"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -44,14 +45,8 @@ Examples:
 			return err
 		}
 
-		if !dryRun {
-			checker, err := NewSafetyChecker(cfg)
-			if err != nil {
-				return err
-			}
-			if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-				return err
-			}
+		if err := checkDeleteBreakpointSafety(cfg); err != nil {
+			return err
 		}
 
 		c, err := NewClientFromConfig(cfg)
@@ -114,6 +109,14 @@ Examples:
 
 		return runDeleteBreakpointRows(handler, workspaceID, []breakpointRow{{ID: identifier}}, verbose)
 	},
+}
+
+func checkDeleteBreakpointSafety(cfg *config.Config) error {
+	checker, err := NewSafetyChecker(cfg)
+	if err != nil {
+		return err
+	}
+	return checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown)
 }
 
 func validateDeleteBreakpointArgs(cmd *cobra.Command, args []string) error {

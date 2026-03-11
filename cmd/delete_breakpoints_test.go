@@ -1,6 +1,11 @@
 package cmd
 
-import "testing"
+import (
+	"strings"
+	"testing"
+
+	"github.com/dynatrace-oss/dtctl/pkg/config"
+)
 
 func TestDeleteBreakpointCommandRegistration(t *testing.T) {
 	deleteCmd, _, err := rootCmd.Find([]string{"delete"})
@@ -113,4 +118,34 @@ func TestFormatBreakpointLocation(t *testing.T) {
 	if got := formatBreakpointLocation(breakpointRow{ID: "bp-1"}); got != "unknown location" {
 		t.Fatalf("unexpected fallback location: %q", got)
 	}
+}
+
+func TestCheckDeleteBreakpointSafety(t *testing.T) {
+	t.Run("readonly is blocked", func(t *testing.T) {
+		cfg := config.NewConfig()
+		cfg.SetContextWithOptions("readonly-ctx", "https://prod.dt.com", "token", &config.ContextOptions{
+			SafetyLevel: config.SafetyLevelReadOnly,
+		})
+		cfg.CurrentContext = "readonly-ctx"
+
+		err := checkDeleteBreakpointSafety(cfg)
+		if err == nil {
+			t.Fatalf("expected readonly delete safety error")
+		}
+		if !strings.Contains(err.Error(), "readonly") {
+			t.Fatalf("expected readonly error message, got: %v", err)
+		}
+	})
+
+	t.Run("readwrite-all is allowed", func(t *testing.T) {
+		cfg := config.NewConfig()
+		cfg.SetContextWithOptions("rw-all", "https://staging.dt.com", "token", &config.ContextOptions{
+			SafetyLevel: config.SafetyLevelReadWriteAll,
+		})
+		cfg.CurrentContext = "rw-all"
+
+		if err := checkDeleteBreakpointSafety(cfg); err != nil {
+			t.Fatalf("expected delete to be allowed, got: %v", err)
+		}
+	})
 }
