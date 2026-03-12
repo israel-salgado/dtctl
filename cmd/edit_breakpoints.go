@@ -63,17 +63,17 @@ Examples:
 			return err
 		}
 
-		if dryRun {
-			changes := describeBreakpointEdits(conditionChanged, condition, enabledChanged, enabled)
-			return printBreakpointMessage("edit", fmt.Sprintf("Dry run: would edit breakpoint %s (%s)", identifier, changes))
-		}
-
 		checker, err := NewSafetyChecker(cfg)
 		if err != nil {
 			return err
 		}
 		if err := checker.CheckError(safety.OperationUpdate, safety.OwnershipUnknown); err != nil {
 			return err
+		}
+
+		if dryRun {
+			changes := describeBreakpointEdits(conditionChanged, condition, enabledChanged, enabled)
+			return printBreakpointMessage("edit", fmt.Sprintf("Dry run: would edit breakpoint %s (%s)", identifier, changes))
 		}
 
 		c, err := NewClientFromConfig(cfg)

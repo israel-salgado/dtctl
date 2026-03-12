@@ -31,12 +31,6 @@ Examples:
 			return err
 		}
 
-		if dryRun {
-			return printBreakpointMessage("create", fmt.Sprintf("Dry run: would create breakpoint at %s:%d", fileName, lineNumber))
-		}
-
-		verbose := isDebugVerbose()
-
 		cfg, err := LoadConfig()
 		if err != nil {
 			return err
@@ -49,6 +43,12 @@ Examples:
 		if err := checker.CheckError(safety.OperationCreate, safety.OwnershipUnknown); err != nil {
 			return err
 		}
+
+		if dryRun {
+			return printBreakpointMessage("create", fmt.Sprintf("Dry run: would create breakpoint at %s:%d", fileName, lineNumber))
+		}
+
+		verbose := isDebugVerbose()
 
 		ctx, err := cfg.CurrentContextObj()
 		if err != nil {
