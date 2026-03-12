@@ -35,6 +35,15 @@ func isStderrTerminal() bool {
 	return term.IsTerminal(int(os.Stderr.Fd()))
 }
 
+func isSupportedQueryOutputFormat(format string) bool {
+	switch strings.ToLower(strings.TrimSpace(format)) {
+	case "", "table", "wide", "json", "yaml", "yml", "csv", "snapshot", "chart", "sparkline", "spark", "barchart", "bar", "braille", "br":
+		return true
+	default:
+		return false
+	}
+}
+
 // queryCmd represents the query command
 var queryCmd = &cobra.Command{
 	Use:     "query [dql-string]",
@@ -110,6 +119,10 @@ Examples:
   dtctl query "fetch logs | limit 10" -M=queryId,analysisTimeframe -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if !isSupportedQueryOutputFormat(outputFormat) {
+			return fmt.Errorf("unsupported output format %q for query", outputFormat)
+		}
+
 		cfg, err := LoadConfig()
 		if err != nil {
 			return err

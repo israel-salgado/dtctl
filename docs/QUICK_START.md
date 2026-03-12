@@ -22,11 +22,12 @@ This guide provides practical examples for using dtctl to manage your Dynatrace 
     - [App Intents](#app-intents)
 12. [EdgeConnect](#edgeconnect)
 13. [Davis AI](#davis-ai)
-14. [Output Formats](#output-formats)
-15. [Azure Monitoring](#azure-monitoring)
-16. [GCP Monitoring (Preview)](#gcp-monitoring-preview)
-17. [Tips & Tricks](#tips--tricks)
-18. [Troubleshooting](#troubleshooting)
+14. [Live Debugger](#live-debugger)
+15. [Output Formats](#output-formats)
+16. [Azure Monitoring](#azure-monitoring)
+17. [GCP Monitoring (Preview)](#gcp-monitoring-preview)
+18. [Tips & Tricks](#tips--tricks)
+19. [Troubleshooting](#troubleshooting)
 
 ---
 
@@ -2886,6 +2887,55 @@ dtctl create gcp monitoring --name "my-gcp-monitoring-explicit" \
 dtctl delete gcp monitoring my-gcp-monitoring
 dtctl delete gcp connection my-gcp-connection
 ```
+
+---
+
+## Live Debugger
+
+For complete guidance, see [LIVE_DEBUGGER.md](LIVE_DEBUGGER.md).
+
+> **Authentication note:** Live Debugger breakpoint operations currently require OAuth authentication. The `dev-obs:breakpoints:set` scope is supported with `dtctl auth login`, but is not currently supported with API token authentication (for example via `dtctl config set-credentials`).
+
+### Configure target filters
+
+`--filters` accepts both `key:value` and `key=value` pairs.
+
+```bash
+dtctl update breakpoint --filters k8s.namespace.name:prod
+dtctl update breakpoints --filters k8s.namespace.name:prod,dt.entity.host:HOST-123
+dtctl update breakpoint --filters k8s.namespace.name=prod,dt.entity.host=HOST-123
+```
+
+### Breakpoint lifecycle
+
+```bash
+# Create
+dtctl create breakpoint OrderController.java:306
+
+# List
+dtctl get breakpoints
+
+# Describe by location or mutable ID
+dtctl describe OrderController.java:306
+dtctl describe dtctl-rule-123
+
+# Edit condition / enabled state
+dtctl update breakpoint OrderController.java:306 --condition "orderId != null"
+dtctl update breakpoint OrderController.java:306 --enabled false
+
+# Delete by ID, by location, or all
+dtctl delete breakpoint dtctl-rule-123
+dtctl delete breakpoint OrderController.java:306
+dtctl delete breakpoint --all -y
+```
+
+### Decoded snapshot output
+
+```bash
+dtctl query "fetch application.snapshots | sort timestamp desc | limit 5" -o snapshot
+```
+
+`-o snapshot` enriches each record with `parsed_snapshot` decoded from `snapshot.data` and `snapshot.string_map`.
 
 ---
 

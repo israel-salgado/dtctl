@@ -8,7 +8,7 @@ import (
 
 func TestNewPrinter(t *testing.T) {
 	// NewPrinter should return a non-nil printer for any format
-	formats := []string{"json", "yaml", "yml", "csv", "table", "wide", "chart", "sparkline", "spark", "barchart", "bar", "braille", "br", "unknown"}
+	formats := []string{"json", "yaml", "yml", "csv", "snapshot", "table", "wide", "chart", "sparkline", "spark", "barchart", "bar", "braille", "br", "unknown"}
 
 	for _, format := range formats {
 		t.Run(format, func(t *testing.T) {
@@ -25,6 +25,17 @@ func TestNewPrinterWithWriter(t *testing.T) {
 	p := NewPrinterWithWriter("json", &buf)
 	if p == nil {
 		t.Error("NewPrinterWithWriter returned nil")
+	}
+}
+
+func TestNewPrinterWithWriter_Snapshot(t *testing.T) {
+	var buf bytes.Buffer
+	p := NewPrinterWithWriter("snapshot", &buf)
+	if p == nil {
+		t.Fatal("NewPrinterWithWriter returned nil")
+	}
+	if _, ok := p.(*SnapshotPrinter); !ok {
+		t.Fatalf("NewPrinterWithWriter(\"snapshot\") = %T, want *SnapshotPrinter", p)
 	}
 }
 

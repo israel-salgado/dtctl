@@ -13,6 +13,7 @@ import (
 // setupAuthTestConfig creates a temporary config with the given context and returns the path.
 func setupAuthTestConfig(t *testing.T, contextName, environment, tokenRef string) string {
 	t.Helper()
+	t.Setenv("DTCTL_DISABLE_KEYRING", "1")
 	tmpDir := t.TempDir()
 	configPath := filepath.Join(tmpDir, "config.yaml")
 
