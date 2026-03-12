@@ -19,6 +19,8 @@ type SnapshotPrinter struct {
 	writer io.Writer
 }
 
+const maxSnapshotStringMapIndex = 100_000
+
 // Print prints an object as JSON with snapshot records enriched by decoded payload fields.
 func (p *SnapshotPrinter) Print(obj interface{}) error {
 	transformed := transformSnapshotObject(obj)
@@ -119,6 +121,9 @@ func parseSnapshotStringMap(raw string) ([]string, error) {
 				break
 			}
 		}
+		if maxIndex > maxSnapshotStringMapIndex {
+			return nil, fmt.Errorf("string map index too large: %d", maxIndex)
+		}
 
 		result := make([]string, maxIndex+1)
 		for _, item := range asArray {
@@ -137,6 +142,9 @@ func parseSnapshotStringMap(raw string) ([]string, error) {
 			if int(idx) > maxIndex {
 				maxIndex = int(idx)
 			}
+		}
+		if maxIndex > maxSnapshotStringMapIndex {
+			return nil, fmt.Errorf("string map index too large: %d", maxIndex)
 		}
 		result := make([]string, maxIndex+1)
 		for value, idx := range asMap {

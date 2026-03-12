@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/base64"
 	"encoding/json"
+	"strings"
 	"testing"
 
 	"google.golang.org/protobuf/proto"
@@ -38,6 +39,28 @@ func TestParseSnapshotStringMap_MapFormat(t *testing.T) {
 	}
 	if result[1] != "metadata" || result[2] != "rule_id" {
 		t.Fatalf("unexpected parsed cache: %#v", result)
+	}
+}
+
+func TestParseSnapshotStringMap_ArrayFormatRejectsHugeIndex(t *testing.T) {
+	raw := `[{"huge":100001}]`
+	_, err := parseSnapshotStringMap(raw)
+	if err == nil {
+		t.Fatal("expected error for oversized index")
+	}
+	if !strings.Contains(err.Error(), "string map index too large") {
+		t.Fatalf("unexpected error: %v", err)
+	}
+}
+
+func TestParseSnapshotStringMap_MapFormatRejectsHugeIndex(t *testing.T) {
+	raw := `{"huge":100001}`
+	_, err := parseSnapshotStringMap(raw)
+	if err == nil {
+		t.Fatal("expected error for oversized index")
+	}
+	if !strings.Contains(err.Error(), "string map index too large") {
+		t.Fatalf("unexpected error: %v", err)
 	}
 }
 
