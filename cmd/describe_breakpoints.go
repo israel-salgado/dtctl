@@ -449,11 +449,6 @@ func uniqueStrings(values []string) []string {
 	return result
 }
 
-func boolValue(value interface{}) bool {
-	result, _ := value.(bool)
-	return result
-}
-
 func printBreakpointStatusResult(result breakpointStatusResult) {
 	_, _ = fmt.Fprintf(rootCmd.OutOrStdout(), "ID:            %s\n", result.ID)
 	if result.Location != "" {
