@@ -34,22 +34,44 @@ func DecodeSnapshotRecords(records []map[string]interface{}, simplify bool) []ma
 	return result
 }
 
+// snapshotTableColumns defines the columns shown in table/CSV output when --decode is active.
+// Order matters: columns are displayed in this order.
+var snapshotTableColumns = []string{
+	"timestamp",
+	"snapshot.id",
+	"snapshot.message",
+	"code.filepath",
+	"code.function",
+	"code.line.number",
+	"session.id",
+	"thread.name",
+	"parsed_snapshot",
+}
+
 // SummarizeSnapshotForTable replaces the parsed_snapshot map in each record with a
-// human-readable summary string suitable for table/CSV output.
-// Example: "send() at PpxSessionSender.java:62 | 4 locals, 30 frames"
+// human-readable summary string, and filters to only the most relevant columns
+// for readable table/CSV output.
+// Example summary: "send() at PpxSessionSender.java:62 | 4 locals, 30 frames"
 func SummarizeSnapshotForTable(records []map[string]interface{}) []map[string]interface{} {
+	result := make([]map[string]interface{}, 0, len(records))
 	for _, rec := range records {
-		parsed, ok := rec["parsed_snapshot"]
-		if !ok {
-			continue
+		// Summarize the parsed_snapshot to a string
+		if parsed, ok := rec["parsed_snapshot"]; ok {
+			if parsedMap, ok := parsed.(map[string]interface{}); ok {
+				rec["parsed_snapshot"] = summarizeSnapshot(parsedMap)
+			}
 		}
-		parsedMap, ok := parsed.(map[string]interface{})
-		if !ok {
-			continue
+
+		// Filter to relevant columns only, preserving display order
+		filtered := make(map[string]interface{}, len(snapshotTableColumns))
+		for _, col := range snapshotTableColumns {
+			if v, ok := rec[col]; ok {
+				filtered[col] = v
+			}
 		}
-		rec["parsed_snapshot"] = summarizeSnapshot(parsedMap)
+		result = append(result, filtered)
 	}
-	return records
+	return result
 }
 
 func summarizeSnapshot(parsed map[string]interface{}) string {
