@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/gcpconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/gcpmonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -42,14 +43,14 @@ var deleteGCPConnectionCmd = &cobra.Command{
 		item, err := handler.FindByName(identifier)
 		if err == nil {
 			objectID = item.ObjectID
-			fmt.Printf("Resolved name %q to ID %s\n", identifier, objectID)
+			output.PrintInfo("Resolved name %q to ID %s", identifier, objectID)
 		}
 
 		if err := handler.Delete(objectID); err != nil {
 			return fmt.Errorf("failed to delete GCP connection %q: %w", objectID, err)
 		}
 
-		fmt.Printf("Deleted GCP connection %s\n", objectID)
+		output.PrintSuccess("GCP connection %s deleted", objectID)
 		return nil
 	},
 }
@@ -86,14 +87,14 @@ var deleteGCPMonitoringConfigCmd = &cobra.Command{
 		item, err := handler.FindByName(identifier)
 		if err == nil {
 			objectID = item.ObjectID
-			fmt.Printf("Resolved name %q to ID %s\n", identifier, objectID)
+			output.PrintInfo("Resolved name %q to ID %s", identifier, objectID)
 		}
 
 		if err := handler.Delete(objectID); err != nil {
 			return fmt.Errorf("failed to delete GCP monitoring config %q: %w", objectID, err)
 		}
 
-		fmt.Printf("Deleted GCP monitoring config %s\n", objectID)
+		output.PrintSuccess("GCP monitoring config %s deleted", objectID)
 		return nil
 	},
 }

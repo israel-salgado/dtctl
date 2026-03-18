@@ -9,6 +9,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azureconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azuremonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -94,7 +95,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Azure connection created: %s\n", created.ObjectID)
+		output.PrintSuccess("Azure connection created: %s", created.ObjectID)
 		if createAzureConnectionType == "federatedIdentityCredential" {
 			printFederatedCreateInstructions(c.BaseURL(), created.ObjectID, createAzureConnectionName)
 		}
@@ -188,7 +189,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Azure monitoring config created: %s\n", created.ObjectID)
+		output.PrintSuccess("Azure monitoring config created: %s", created.ObjectID)
 		return nil
 	},
 }

@@ -99,9 +99,9 @@ Examples:
 		}
 
 		output.PrintSuccess("Workflow %q created", result.Title)
-		fmt.Printf("  ID:   %s\n", result.ID)
-		fmt.Printf("  Name: %s\n", result.Title)
-		fmt.Printf("  URL:  %s/ui/apps/dynatrace.automations/workflows/%s\n", c.BaseURL(), result.ID)
+		output.PrintInfo("  ID:   %s", result.ID)
+		output.PrintInfo("  Name: %s", result.Title)
+		output.PrintInfo("  URL:  %s/ui/apps/dynatrace.automations/workflows/%s", c.BaseURL(), result.ID)
 		return nil
 	},
 }

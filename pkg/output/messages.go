@@ -31,3 +31,16 @@ func FprintWarning(w io.Writer, format string, args ...interface{}) {
 	prefix := Colorize(Yellow, "Warning:")
 	fmt.Fprintf(w, "%s %s\n", prefix, msg)
 }
+
+// PrintInfo prints an informational message to stderr.
+// No prefix or color is applied — use this for supplementary detail lines
+// (e.g., IDs, URLs) that accompany a PrintSuccess message.
+// Output goes to stderr so it doesn't interfere with structured stdout.
+func PrintInfo(format string, args ...interface{}) {
+	FprintInfo(os.Stderr, format, args...)
+}
+
+// FprintInfo prints an informational message to the given writer.
+func FprintInfo(w io.Writer, format string, args ...interface{}) {
+	fmt.Fprintf(w, format+"\n", args...)
+}

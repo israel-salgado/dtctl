@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/edgeconnect"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 	"github.com/dynatrace-oss/dtctl/pkg/util/format"
@@ -109,13 +110,13 @@ Examples:
 			return fmt.Errorf("failed to create EdgeConnect: %w", err)
 		}
 
-		fmt.Printf("EdgeConnect %q created (ID: %s)\n", result.Name, result.ID)
+		output.PrintSuccess("EdgeConnect %q created (ID: %s)", result.Name, result.ID)
 		if result.OAuthClientSecret != "" {
-			fmt.Println("\nOAuth Client Credentials (save these, the secret won't be shown again):")
-			fmt.Printf("  Client ID:     %s\n", result.OAuthClientID)
-			fmt.Printf("  Client Secret: %s\n", result.OAuthClientSecret)
+			output.PrintInfo("\nOAuth Client Credentials (save these, the secret won't be shown again):")
+			output.PrintInfo("  Client ID:     %s", result.OAuthClientID)
+			output.PrintInfo("  Client Secret: %s", result.OAuthClientSecret)
 			if result.OAuthClientResource != "" {
-				fmt.Printf("  Resource:      %s\n", result.OAuthClientResource)
+				output.PrintInfo("  Resource:      %s", result.OAuthClientResource)
 			}
 		}
 		return nil

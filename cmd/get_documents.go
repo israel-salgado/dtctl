@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/prompt"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/document"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/resolver"
@@ -351,7 +353,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Dashboard %q deleted (moved to trash)\n", metadata.Name)
+		output.PrintSuccess("Dashboard %q deleted (moved to trash)", metadata.Name)
 		return nil
 	},
 }
@@ -425,7 +427,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Notebook %q deleted (moved to trash)\n", metadata.Name)
+		output.PrintSuccess("Notebook %q deleted (moved to trash)", metadata.Name)
 		return nil
 	},
 }
@@ -494,11 +496,11 @@ Examples:
 		for _, docID := range args {
 			err := handler.Delete(docID)
 			if err != nil {
-				fmt.Printf("Failed to delete document %s: %v\n", docID, err)
+				fmt.Fprintf(os.Stderr, "Failed to delete document %s: %v\n", docID, err)
 				continue
 			}
 
-			fmt.Printf("Permanently deleted document %s\n", docID)
+			output.PrintSuccess("Permanently deleted document %s", docID)
 			successCount++
 		}
 
@@ -507,7 +509,7 @@ Examples:
 		}
 
 		if len(args) > 1 {
-			fmt.Printf("\nDeleted %d of %d documents\n", successCount, len(args))
+			output.PrintInfo("\nDeleted %d of %d documents", successCount, len(args))
 		}
 
 		return nil
@@ -717,7 +719,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Document %q (%s) deleted (moved to trash)\n", metadata.Name, metadata.Type)
+		output.PrintSuccess("Document %q (%s) deleted (moved to trash)", metadata.Name, metadata.Type)
 		return nil
 	},
 }

@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/prompt"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/edgeconnect"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -117,7 +118,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("EdgeConnect %q deleted\n", ec.Name)
+		output.PrintSuccess("EdgeConnect %q deleted", ec.Name)
 		return nil
 	},
 }

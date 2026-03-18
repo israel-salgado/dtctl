@@ -128,6 +128,9 @@ func getTableFields(t reflect.Type, wide bool) []tableFieldInfo {
 func getFieldByPath(v reflect.Value, indices []int) reflect.Value {
 	for _, idx := range indices {
 		if v.Kind() == reflect.Ptr {
+			if v.IsNil() {
+				return reflect.Value{}
+			}
 			v = v.Elem()
 		}
 		v = v.Field(idx)

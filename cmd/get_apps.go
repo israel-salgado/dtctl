@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/prompt"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/appengine"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -154,7 +155,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("App %q uninstall initiated\n", appID)
+		output.PrintSuccess("App %q uninstall initiated", appID)
 		return nil
 	},
 }

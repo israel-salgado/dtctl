@@ -2,10 +2,12 @@ package cmd
 
 import (
 	"fmt"
+	"os"
 	"strconv"
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/prompt"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/document"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/resolver"
@@ -98,7 +100,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Workflow %q restored to version %d\n", result.Title, version)
+		output.PrintSuccess("Workflow %q restored to version %d", result.Title, version)
 		return nil
 	},
 }
@@ -184,7 +186,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Dashboard %q restored from snapshot %d (new document version: %d)\n", metadata.Name, version, result.Version)
+		output.PrintSuccess("Dashboard %q restored from snapshot %d (new document version: %d)", metadata.Name, version, result.Version)
 		return nil
 	},
 }
@@ -270,7 +272,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Notebook %q restored from snapshot %d (new document version: %d)\n", metadata.Name, version, result.Version)
+		output.PrintSuccess("Notebook %q restored from snapshot %d (new document version: %d)", metadata.Name, version, result.Version)
 		return nil
 	},
 }
@@ -358,7 +360,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Document %q (%s) restored from snapshot %d (new document version: %d)\n", metadata.Name, metadata.Type, version, result.Version)
+		output.PrintSuccess("Document %q (%s) restored from snapshot %d (new document version: %d)", metadata.Name, metadata.Type, version, result.Version)
 		return nil
 	},
 }
@@ -430,11 +432,11 @@ Examples:
 
 			err = handler.Restore(docID, opts)
 			if err != nil {
-				fmt.Printf("Failed to restore document %s: %v\n", docID, err)
+				fmt.Fprintf(os.Stderr, "Failed to restore document %s: %v\n", docID, err)
 				continue
 			}
 
-			fmt.Printf("Restored %s %q (ID: %s)\n", doc.Type, doc.Name, docID)
+			output.PrintSuccess("Restored %s %q (ID: %s)", doc.Type, doc.Name, docID)
 			successCount++
 		}
 
@@ -443,7 +445,7 @@ Examples:
 		}
 
 		if len(args) > 1 {
-			fmt.Printf("\nRestored %d of %d documents\n", successCount, len(args))
+			output.PrintInfo("\nRestored %d of %d documents", successCount, len(args))
 		}
 
 		return nil

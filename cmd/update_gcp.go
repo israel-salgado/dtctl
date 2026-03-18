@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/gcpconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/gcpmonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -94,7 +95,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("GCP connection updated: %s\n", updated.ObjectID)
+		output.PrintSuccess("GCP connection updated: %s", updated.ObjectID)
 		return nil
 	},
 }
@@ -183,7 +184,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("GCP monitoring config updated: %s\n", updated.ObjectID)
+		output.PrintSuccess("GCP monitoring config updated: %s", updated.ObjectID)
 		return nil
 	},
 }

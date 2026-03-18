@@ -6,6 +6,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/document"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 )
@@ -123,7 +124,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to add recipients to share: %w", err)
 			}
-			fmt.Printf("Added %d recipient(s) to existing %s share for document %q\n",
+			output.PrintSuccess("Added %d recipient(s) to existing %s share for document %q",
 				len(recipients), access, documentID)
 		} else {
 			// Create new share
@@ -135,7 +136,7 @@ Examples:
 			if err != nil {
 				return fmt.Errorf("failed to create share: %w", err)
 			}
-			fmt.Printf("Created %s share (%s) for document %q with %d recipient(s)\n",
+			output.PrintSuccess("Created %s share (%s) for document %q with %d recipient(s)",
 				access, share.ID, documentID, len(recipients))
 		}
 
@@ -244,7 +245,7 @@ Examples:
 				}
 				deleted++
 			}
-			fmt.Printf("Deleted %d share(s) from document %q\n", deleted, documentID)
+			output.PrintSuccess("Deleted %d share(s) from document %q", deleted, documentID)
 		} else {
 			// Remove specific recipients from all shares
 			recipientIDs := append(users, groups...)
@@ -256,13 +257,13 @@ Examples:
 				if err := handler.RemoveDirectShareRecipients(share.ID, recipientIDs); err != nil {
 					// Log but continue - recipient might not be in this share
 					if verbosity > 0 {
-						fmt.Printf("Note: could not remove from share %s: %v\n", share.ID, err)
+						output.PrintInfo("Note: could not remove from share %s: %v", share.ID, err)
 					}
 					continue
 				}
 				removed++
 			}
-			fmt.Printf("Removed %d recipient(s) from %d share(s) of document %q\n",
+			output.PrintSuccess("Removed %d recipient(s) from %d share(s) of document %q",
 				len(recipientIDs), removed, documentID)
 		}
 

@@ -152,6 +152,10 @@ func (p *CSVPrinter) printStructs(v reflect.Value, writer *csv.Writer) error {
 		var row []string
 		for _, f := range fields {
 			value := getFieldByPath(elem, f.indices)
+			if !value.IsValid() {
+				row = append(row, "")
+				continue
+			}
 			row = append(row, formatCSVValue(value.Interface()))
 		}
 		if err := writer.Write(row); err != nil {

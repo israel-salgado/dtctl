@@ -8,6 +8,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/document"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 	"github.com/dynatrace-oss/dtctl/pkg/util/format"
@@ -213,19 +214,19 @@ func createDocumentRunE(docType string) func(cmd *cobra.Command, args []string) 
 
 		// Handle dry-run
 		if dryRun {
-			fmt.Printf("Dry run: would create %s\n", docType)
-			fmt.Printf("  Name: %s\n", name)
+			output.PrintInfo("Dry run: would create %s", docType)
+			output.PrintInfo("  Name: %s", name)
 			if id != "" {
-				fmt.Printf("  ID: %s\n", id)
+				output.PrintInfo("  ID: %s", id)
 			}
 			if description != "" {
-				fmt.Printf("  Description: %s\n", description)
+				output.PrintInfo("  Description: %s", description)
 			}
 			if tileCount > 0 {
-				fmt.Printf("  %s: %d\n", capitalize(itemName(docType)), tileCount)
+				output.PrintInfo("  %s: %d", capitalize(itemName(docType)), tileCount)
 			}
 			if len(warnings) == 0 {
-				fmt.Println("\nDocument structure validated successfully")
+				output.PrintInfo("\nDocument structure validated successfully")
 			}
 			return nil
 		}
@@ -277,14 +278,14 @@ func createDocumentRunE(docType string) func(cmd *cobra.Command, args []string) 
 		}
 
 		// Improved output formatting for better visibility
-		fmt.Printf("%s created successfully\n", capitalize(docType))
-		fmt.Printf("  Name: %s\n", resultName)
-		fmt.Printf("  ID:   %s\n", resultID)
+		output.PrintSuccess("%s created", capitalize(docType))
+		output.PrintInfo("  Name: %s", resultName)
+		output.PrintInfo("  ID:   %s", resultID)
 		if tileCount > 0 {
-			fmt.Printf("  %s: %d\n", capitalize(itemName(docType)), tileCount)
+			output.PrintInfo("  %s: %d", capitalize(itemName(docType)), tileCount)
 		}
 		if result.ID != "" {
-			fmt.Printf("  URL:  %s/ui/apps/dynatrace.%ss/%s/%s\n", c.BaseURL(), docType, docType, result.ID)
+			output.PrintInfo("  URL:  %s/ui/apps/dynatrace.%ss/%s/%s", c.BaseURL(), docType, docType, result.ID)
 		}
 		return nil
 	}

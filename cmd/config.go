@@ -8,6 +8,7 @@ import (
 	"gopkg.in/yaml.v3"
 
 	"github.com/dynatrace-oss/dtctl/pkg/config"
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 )
 
 // loadConfigRaw loads configuration respecting the --config flag but WITHOUT applying
@@ -99,9 +100,9 @@ Environment variables can be used in the config file using ${VAR_NAME} syntax.
 			return fmt.Errorf("failed to write %s: %w", configPath, err)
 		}
 
-		fmt.Printf("Created %s\n", configPath)
-		fmt.Printf("\nEdit this file to configure your project-local settings.\n")
-		fmt.Printf("Environment variables can be used with ${VAR_NAME} syntax.\n")
+		output.PrintSuccess("Created %s", configPath)
+		output.PrintInfo("\nEdit this file to configure your project-local settings.")
+		output.PrintInfo("Environment variables can be used with ${VAR_NAME} syntax.")
 		return nil
 	},
 }
@@ -336,7 +337,7 @@ After migration, tokens are removed from the config file and stored securely.`,
 			return fmt.Errorf("failed to save config after migration: %w", err)
 		}
 
-		fmt.Printf("Successfully migrated %d token(s) to %s\n", migrated, config.KeyringBackend())
+		output.PrintSuccess("Migrated %d token(s) to %s", migrated, config.KeyringBackend())
 		return nil
 	},
 }

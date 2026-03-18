@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/dynatrace-oss/dtctl/pkg/config"
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 )
 
 // ctxCmd is a top-level shortcut for context management.
@@ -331,14 +332,14 @@ func deleteContext(name string) error {
 
 	if cfg.CurrentContext == name {
 		cfg.CurrentContext = ""
-		fmt.Printf("Warning: deleted the current context. Use 'dtctl ctx <name>' to set a new one.\n")
+		output.PrintWarning("Deleted the current context. Use 'dtctl ctx <name>' to set a new one.")
 	}
 
 	if err := saveConfig(cfg); err != nil {
 		return err
 	}
 
-	fmt.Printf("Context %q deleted\n", name)
+	output.PrintSuccess("Context %q deleted", name)
 	return nil
 }
 

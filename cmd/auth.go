@@ -3,6 +3,7 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"os"
 	"time"
 
 	"github.com/spf13/cobra"
@@ -10,6 +11,7 @@ import (
 	"github.com/dynatrace-oss/dtctl/pkg/auth"
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 	"github.com/dynatrace-oss/dtctl/pkg/config"
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 )
 
 var (
@@ -233,20 +235,20 @@ you'll need to use API token authentication instead (dtctl config set-credential
 		ctx, cancel := context.WithTimeout(context.Background(), timeout)
 		defer cancel()
 
-		fmt.Println("Starting OAuth authentication flow...")
+		output.PrintInfo("Starting OAuth authentication flow...")
 		tokens, err := flow.Start(ctx)
 		if err != nil {
 			return fmt.Errorf("authentication failed: %w", err)
 		}
 
-		fmt.Println("✓ Authentication successful!")
+		output.PrintSuccess("Authentication successful!")
 
 		// Get user info
 		userInfo, err := flow.GetUserInfo(tokens.AccessToken)
 		if err != nil {
-			fmt.Printf("Warning: Failed to retrieve user info: %v\n", err)
+			output.PrintWarning("Failed to retrieve user info: %v", err)
 		} else {
-			fmt.Printf("Logged in as: %s (%s)\n", userInfo.Name, userInfo.Email)
+			output.PrintInfo("Logged in as: %s (%s)", userInfo.Name, userInfo.Email)
 		}
 
 		// Store tokens
@@ -339,9 +341,9 @@ If no context name is provided, the current context will be used.`,
 		}
 
 		if err := tokenManager.DeleteToken(tokenName); err != nil {
-			fmt.Printf("Warning: Failed to delete token from keyring: %v\n", err)
+			fmt.Fprintf(os.Stderr, "Warning: Failed to delete token from keyring: %v\n", err)
 		} else {
-			fmt.Printf("✓ Removed OAuth token '%s'\n", tokenName)
+			output.PrintSuccess("Removed OAuth token '%s'", tokenName)
 		}
 
 		// Optionally remove context
@@ -360,7 +362,7 @@ If no context name is provided, the current context will be used.`,
 				return fmt.Errorf("failed to save config: %w", err)
 			}
 
-			fmt.Printf("✓ Removed context '%s'\n", contextName)
+			output.PrintSuccess("Removed context '%s'", contextName)
 		}
 
 		return nil
@@ -427,8 +429,8 @@ to force a refresh.`,
 			return fmt.Errorf("failed to refresh tokens: %w", err)
 		}
 
-		fmt.Println("✓ Tokens refreshed successfully")
-		fmt.Printf("New token expires at: %s\n", tokens.ExpiresAt.Format(time.RFC3339))
+		output.PrintSuccess("Tokens refreshed")
+		output.PrintInfo("New token expires at: %s", tokens.ExpiresAt.Format(time.RFC3339))
 
 		return nil
 	},

@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/skills"
 	"github.com/dynatrace-oss/dtctl/pkg/suggest"
 )
@@ -233,11 +234,11 @@ func runSkillsInstall(cmd *cobra.Command, _ []string) error {
 	}
 
 	if result.Replaced {
-		fmt.Printf("Updated %s skill file: %s\n", result.Agent.DisplayName, result.Path)
+		output.PrintSuccess("Updated %s skill file: %s", result.Agent.DisplayName, result.Path)
 	} else {
-		fmt.Printf("Installed %s skill file: %s\n", result.Agent.DisplayName, result.Path)
+		output.PrintSuccess("Installed %s skill file: %s", result.Agent.DisplayName, result.Path)
 	}
-	fmt.Printf("Scope: %s\n", scope)
+	output.PrintInfo("Scope: %s", scope)
 
 	return nil
 }
@@ -307,12 +308,12 @@ func runSkillsUninstall(cmd *cobra.Command, _ []string) error {
 	}
 
 	if len(removed) == 0 {
-		fmt.Printf("No %s skill files found to remove.\n", agent.DisplayName)
+		output.PrintInfo("No %s skill files found to remove.", agent.DisplayName)
 		return nil
 	}
 
 	for _, path := range removed {
-		fmt.Printf("Removed: %s\n", path)
+		output.PrintSuccess("Removed: %s", path)
 	}
 
 	return nil
@@ -367,13 +368,13 @@ func runSkillsStatus(cmd *cobra.Command, _ []string) error {
 		if r.Installed {
 			anyInstalled = true
 			printStatus(r, detectedAgent, detected)
-			fmt.Println()
+			output.PrintInfo("")
 		}
 	}
 
 	if !anyInstalled {
-		fmt.Println("No skill files installed.")
-		fmt.Println("Run 'dtctl skills install' to get started.")
+		output.PrintInfo("No skill files installed.")
+		output.PrintInfo("Run 'dtctl skills install' to get started.")
 	}
 
 	return nil
@@ -398,20 +399,20 @@ func statusToAgentEntry(r *skills.StatusResult) skillsStatusAgentEntry {
 
 // printStatus prints a single agent's status in human-readable format.
 func printStatus(r *skills.StatusResult, detectedAgent skills.Agent, detected bool) {
-	fmt.Printf("Agent:     %s", r.Agent.DisplayName)
+	suffix := ""
 	if detected && detectedAgent.Name == r.Agent.Name {
-		fmt.Printf(" (detected via %s env)", r.Agent.EnvVar)
+		suffix = fmt.Sprintf(" (detected via %s env)", r.Agent.EnvVar)
 	}
-	fmt.Println()
+	output.PrintInfo("Agent:     %s%s", r.Agent.DisplayName, suffix)
 
 	if r.Installed {
 		scope := "project"
 		if r.Global {
 			scope = "global"
 		}
-		fmt.Printf("Installed: %s (%s)\n", r.Path, scope)
+		output.PrintInfo("Installed: %s (%s)", r.Path, scope)
 	} else {
-		fmt.Println("Installed: no")
+		output.PrintInfo("Installed: no")
 	}
 }
 

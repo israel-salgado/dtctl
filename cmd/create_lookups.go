@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/lookup"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 )
@@ -155,11 +156,11 @@ Examples:
 			return fmt.Errorf("failed to create lookup table: %w", err)
 		}
 
-		fmt.Printf("Lookup table %q created successfully\n", path)
-		fmt.Printf("  Records: %d\n", result.Records)
-		fmt.Printf("  File Size: %d bytes\n", result.FileSize)
+		output.PrintSuccess("Lookup table %q created", path)
+		output.PrintInfo("  Records: %d", result.Records)
+		output.PrintInfo("  File Size: %d bytes", result.FileSize)
 		if result.DiscardedDuplicates > 0 {
-			fmt.Printf("  Note: %d duplicate records were discarded\n", result.DiscardedDuplicates)
+			output.PrintInfo("  Note: %d duplicate records were discarded", result.DiscardedDuplicates)
 		}
 		return nil
 	},

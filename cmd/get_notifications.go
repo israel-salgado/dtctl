@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/prompt"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/notification"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -124,7 +125,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Notification %q deleted\n", notifID)
+		output.PrintSuccess("Notification %q deleted", notifID)
 		return nil
 	},
 }

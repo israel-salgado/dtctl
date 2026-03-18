@@ -7,6 +7,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azureconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azuremonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -110,7 +111,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Azure connection updated: %s\n", updated.ObjectID)
+		output.PrintSuccess("Azure connection updated: %s", updated.ObjectID)
 		return nil
 	},
 }
@@ -199,7 +200,7 @@ Examples:
 			return err
 		}
 
-		fmt.Printf("Azure monitoring config updated: %s\n", updated.ObjectID)
+		output.PrintSuccess("Azure monitoring config updated: %s", updated.ObjectID)
 		return nil
 	},
 }

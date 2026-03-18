@@ -119,3 +119,25 @@ func TestFprintWarning_FormatArgs(t *testing.T) {
 		t.Errorf("expected formatted message with multiple args, got: %s", got)
 	}
 }
+
+func TestFprintInfo(t *testing.T) {
+	var buf bytes.Buffer
+	FprintInfo(&buf, "  ID:   %s", "abc-123")
+
+	got := buf.String()
+	expected := "  ID:   abc-123\n"
+	if got != expected {
+		t.Errorf("FprintInfo output = %q, want %q", got, expected)
+	}
+}
+
+func TestFprintInfo_NoFormatArgs(t *testing.T) {
+	var buf bytes.Buffer
+	FprintInfo(&buf, "Note: Bucket creation can take up to 1 minute")
+
+	got := buf.String()
+	expected := "Note: Bucket creation can take up to 1 minute\n"
+	if got != expected {
+		t.Errorf("FprintInfo output = %q, want %q", got, expected)
+	}
+}

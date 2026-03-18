@@ -117,7 +117,7 @@ Examples:
 		}
 
 		output.PrintSuccess("Bucket %q created (status: %s)", result.BucketName, result.Status)
-		fmt.Println("Note: Bucket creation can take up to 1 minute to complete")
+		output.PrintInfo("Note: Bucket creation can take up to 1 minute to complete")
 		return nil
 	},
 }

@@ -99,9 +99,9 @@ Examples:
 		}
 
 		output.PrintSuccess("SLO %q created", result.Name)
-		fmt.Printf("  ID:   %s\n", result.ID)
-		fmt.Printf("  Name: %s\n", result.Name)
-		fmt.Printf("  URL:  %s/ui/apps/dynatrace.site.reliability/slos/%s\n", c.BaseURL(), result.ID)
+		output.PrintInfo("  ID:   %s", result.ID)
+		output.PrintInfo("  Name: %s", result.Name)
+		output.PrintInfo("  URL:  %s/ui/apps/dynatrace.site.reliability/slos/%s", c.BaseURL(), result.ID)
 		return nil
 	},
 }

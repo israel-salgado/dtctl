@@ -5,6 +5,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azureconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azuremonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
@@ -97,7 +98,7 @@ var deleteAzureConnectionCmd = &cobra.Command{
 		if err == nil {
 			// Found by name
 			objectID = item.ObjectID
-			fmt.Printf("Resolved name %q to ID %s\n", identifier, objectID)
+			output.PrintInfo("Resolved name %q to ID %s", identifier, objectID)
 		}
 		// If not found by name, assume identifier is an ID
 
@@ -105,7 +106,7 @@ var deleteAzureConnectionCmd = &cobra.Command{
 			return fmt.Errorf("failed to delete Azure connection %q: %w", objectID, err)
 		}
 
-		fmt.Printf("Deleted Azure connection %s\n", objectID)
+		output.PrintSuccess("Azure connection %s deleted", objectID)
 		return nil
 	},
 }
@@ -146,7 +147,7 @@ var deleteAzureMonitoringConfigCmd = &cobra.Command{
 		if err == nil {
 			// Found by name
 			objectID = item.ObjectID
-			fmt.Printf("Resolved name %q to ID %s\n", identifier, objectID)
+			output.PrintInfo("Resolved name %q to ID %s", identifier, objectID)
 		}
 		// If not found by name, assume identifier is an ID
 
@@ -154,7 +155,7 @@ var deleteAzureMonitoringConfigCmd = &cobra.Command{
 			return fmt.Errorf("failed to delete Azure monitoring config %q: %w", objectID, err)
 		}
 
-		fmt.Printf("Deleted Azure monitoring config %s\n", objectID)
+		output.PrintSuccess("Azure monitoring config %s deleted", objectID)
 		return nil
 	},
 }
