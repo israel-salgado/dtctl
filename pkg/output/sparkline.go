@@ -39,7 +39,8 @@ func (p *SparklinePrinter) Print(obj interface{}) error {
 	chartPrinter := &ChartPrinter{writer: p.writer, height: DefaultChartHeight}
 	ts, err := chartPrinter.extractTimeseries(obj)
 	if err != nil {
-		fmt.Fprintf(p.writer, "Warning: %v. Falling back to JSON output.\n\n", err)
+		FprintWarning(p.writer, "%v. Falling back to JSON output.", err)
+		fmt.Fprintln(p.writer)
 		return (&JSONPrinter{writer: p.writer}).Print(obj)
 	}
 

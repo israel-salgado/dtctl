@@ -56,7 +56,7 @@ func Execute() {
 		// os.Args[0] is the binary name; work with os.Args[1:]
 		expanded, isShell, err := resolveAlias(os.Args[1:], cfg)
 		if err != nil {
-			fmt.Fprintf(os.Stderr, "Error: %s\n", err)
+			output.PrintHumanError("%s", err)
 			os.Exit(1)
 		}
 
@@ -96,11 +96,11 @@ func Execute() {
 			os.Exit(exitCodeForError(err))
 		}
 
-		fmt.Fprintf(os.Stderr, "%s %s\n", output.Colorize(output.Bold+output.Red, "Error:"), err)
+		output.PrintHumanError("%s", err)
 		if len(urlHints) > 0 {
 			fmt.Fprintln(os.Stderr)
 			for _, hint := range urlHints {
-				fmt.Fprintf(os.Stderr, "  Hint: %s\n", hint)
+				output.PrintHint("%s", hint)
 			}
 		}
 		os.Exit(exitCodeForError(err))
@@ -469,6 +469,43 @@ func NewClientFromConfig(cfg *config.Config) (*client.Client, error) {
 
 func init() {
 	cobra.OnInitialize(initConfig)
+
+	// Register template functions for help/usage formatting
+	cobra.AddTemplateFunc("bold", func(s string) string {
+		return output.Colorize(output.Bold, s)
+	})
+
+	// Custom usage template with bold section headers
+	rootCmd.SetUsageTemplate(`{{bold "Usage:"}}{{if .Runnable}}
+  {{.UseLine}}{{end}}{{if .HasAvailableSubCommands}}
+  {{.CommandPath}} [command]{{end}}{{if gt (len .Aliases) 0}}
+
+{{bold "Aliases:"}}
+  {{.NameAndAliases}}{{end}}{{if .HasExample}}
+
+{{bold "Examples:"}}
+{{.Example}}{{end}}{{if .HasAvailableSubCommands}}{{$cmds := .Commands}}{{if eq (len .Groups) 0}}
+
+{{bold "Available Commands:"}}{{range $cmds}}{{if (or .IsAvailableCommand (eq .Name "help"))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{else}}{{range $group := .Groups}}
+
+{{bold .Title}}{{range $cmds}}{{if (and (eq .GroupID $group.ID) (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{if not .AllChildCommandsHaveGroup}}
+
+{{bold "Additional Commands:"}}{{range $cmds}}{{if (and (eq .GroupID "") (or .IsAvailableCommand (eq .Name "help")))}}
+  {{rpad .Name .NamePadding }} {{.Short}}{{end}}{{end}}{{end}}{{end}}{{end}}{{if .HasAvailableLocalFlags}}
+
+{{bold "Flags:"}}
+{{.LocalFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasAvailableInheritedFlags}}
+
+{{bold "Global Flags:"}}
+{{.InheritedFlags.FlagUsages | trimTrailingWhitespaces}}{{end}}{{if .HasHelpSubCommands}}
+
+{{bold "Additional help topics:"}}{{range .Commands}}{{if .IsAdditionalHelpTopicCommand}}
+  {{rpad .CommandPath .CommandPathPadding}} {{.Short}}{{end}}{{end}}{{end}}{{if .HasAvailableSubCommands}}
+
+Use "{{.CommandPath}} [command] --help" for more information about a command.{{end}}
+`)
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVar(&cfgFile, "config", "", "config file (searches .dtctl.yaml upward, then $XDG_CONFIG_HOME/dtctl/config)")

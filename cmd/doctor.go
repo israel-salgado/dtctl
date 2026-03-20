@@ -10,6 +10,7 @@ import (
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 	"github.com/dynatrace-oss/dtctl/pkg/config"
 	"github.com/dynatrace-oss/dtctl/pkg/diagnostic"
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/version"
 )
 
@@ -243,11 +244,11 @@ func printDoctorResults(results []checkResult) {
 		var icon string
 		switch r.Status {
 		case "ok":
-			icon = "[OK]  "
+			icon = output.DoctorOK()
 		case "warn":
-			icon = "[WARN]"
+			icon = output.DoctorWarn()
 		case "fail":
-			icon = "[FAIL]"
+			icon = output.DoctorFail()
 		}
 		fmt.Printf("%s %-16s %s\n", icon, r.Name, r.Detail)
 	}

@@ -2,11 +2,11 @@ package cmd
 
 import (
 	"fmt"
-	"os"
 
 	"github.com/spf13/cobra"
 
 	"github.com/dynatrace-oss/dtctl/pkg/exec"
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 )
 
 // execDQLCmd executes a DQL query (DEPRECATED)
@@ -32,7 +32,7 @@ Examples:
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Show deprecation warning
-		fmt.Fprintln(os.Stderr, "Warning: 'dtctl exec dql' is deprecated. Use 'dtctl query' instead.")
+		output.PrintWarning("'dtctl exec dql' is deprecated. Use 'dtctl query' instead.")
 		cfg, err := LoadConfig()
 		if err != nil {
 			return err

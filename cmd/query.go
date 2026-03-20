@@ -267,16 +267,16 @@ Examples:
 		if live {
 			// Warn about flags that are not meaningfully applicable in live mode
 			if len(metadataFields) > 0 {
-				fmt.Fprintln(os.Stderr, "Warning: --metadata is ignored in live mode (metadata is not displayed during live updates)")
+				output.PrintWarning("--metadata is ignored in live mode (metadata is not displayed during live updates)")
 			}
 			if agentMode {
-				fmt.Fprintln(os.Stderr, "Warning: --agent is ignored in live mode (live mode requires an interactive terminal)")
+				output.PrintWarning("--agent is ignored in live mode (live mode requires an interactive terminal)")
 			}
 			if includeContributions {
-				fmt.Fprintln(os.Stderr, "Warning: --include-contributions is ignored in live mode (contribution data is not displayed during live updates)")
+				output.PrintWarning("--include-contributions is ignored in live mode (contribution data is not displayed during live updates)")
 			}
 			if dryRun {
-				fmt.Fprintln(os.Stderr, "Warning: --dry-run is ignored in live mode (live mode always executes queries)")
+				output.PrintWarning("--dry-run is ignored in live mode (live mode always executes queries)")
 			}
 
 			if interval == 0 {

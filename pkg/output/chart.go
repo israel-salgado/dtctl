@@ -83,7 +83,8 @@ type TimeseriesData struct {
 func (p *ChartPrinter) Print(obj interface{}) error {
 	ts, err := p.extractTimeseries(obj)
 	if err != nil {
-		fmt.Fprintf(p.writer, "Warning: %v. Falling back to JSON output.\n\n", err)
+		FprintWarning(p.writer, "%v. Falling back to JSON output.", err)
+		fmt.Fprintln(p.writer)
 		return (&JSONPrinter{writer: p.writer}).Print(obj)
 	}
 
@@ -179,8 +180,9 @@ func (p *ChartPrinter) extractFromRecords(records []interface{}) (*TimeseriesDat
 
 	// Limit series count
 	if len(allSeries) > MaxSeriesCount {
-		fmt.Fprintf(p.writer, "Warning: Found %d series, showing first %d. Use filters to reduce.\n\n",
+		FprintWarning(p.writer, "Found %d series, showing first %d. Use filters to reduce.",
 			len(allSeries), MaxSeriesCount)
+		fmt.Fprintln(p.writer)
 		allSeries = allSeries[:MaxSeriesCount]
 	}
 

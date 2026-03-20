@@ -186,7 +186,7 @@ func createDocumentRunE(docType string) func(cmd *cobra.Command, args []string) 
 
 		// Show validation warnings
 		for _, w := range warnings {
-			fmt.Fprintf(os.Stderr, "Warning: %s\n", w)
+			output.PrintWarning("%s", w)
 		}
 
 		// Use flag values if provided, otherwise use extracted values

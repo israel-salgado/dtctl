@@ -108,15 +108,16 @@ JWT token's 'sub' claim.`,
 
 		// For table output, use a custom format
 		if outputFormat == "table" || outputFormat == "" {
-			fmt.Printf("User ID:     %s\n", result.UserID)
+			const w = 13
+			output.DescribeKV("User ID:", w, "%s", result.UserID)
 			if result.UserName != "" {
-				fmt.Printf("User Name:   %s\n", result.UserName)
+				output.DescribeKV("User Name:", w, "%s", result.UserName)
 			}
 			if result.EmailAddress != "" {
-				fmt.Printf("Email:       %s\n", result.EmailAddress)
+				output.DescribeKV("Email:", w, "%s", result.EmailAddress)
 			}
-			fmt.Printf("Context:     %s\n", result.Context)
-			fmt.Printf("Environment: %s\n", result.Environment)
+			output.DescribeKV("Context:", w, "%s", result.Context)
+			output.DescribeKV("Environment:", w, "%s", result.Environment)
 			return nil
 		}
 
@@ -221,9 +222,9 @@ you'll need to use API token authentication instead (dtctl config set-credential
 		// Warn about potentially wrong environment URLs
 		if problems := diagnostic.CheckEnvironmentURL(environment); len(problems) > 0 {
 			for _, p := range problems {
-				fmt.Fprintf(os.Stderr, "Warning: %s\n", p.Message)
+				output.PrintWarning("%s", p.Message)
 				if p.SuggestedURL != "" {
-					fmt.Fprintf(os.Stderr, "  Did you mean: %s\n", p.SuggestedURL)
+					output.PrintHint("Did you mean: %s", p.SuggestedURL)
 				}
 			}
 			fmt.Fprintln(os.Stderr)
@@ -353,7 +354,7 @@ If no context name is provided, the current context will be used.`,
 		}
 
 		if err := tokenManager.DeleteToken(tokenName); err != nil {
-			fmt.Fprintf(os.Stderr, "Warning: Failed to delete token from keyring: %v\n", err)
+			output.PrintWarning("Failed to delete token from keyring: %v", err)
 		} else {
 			output.PrintSuccess("Removed OAuth token '%s'", tokenName)
 		}

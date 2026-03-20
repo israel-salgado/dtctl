@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/dynatrace-oss/dtctl/pkg/client"
+	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azureconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azuremonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/bucket"
@@ -1573,7 +1574,7 @@ func printFederatedInstructions(baseURL, objectID string, warnings *[]string) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
 		// Should not happen if client is initialized correctly, but fail gracefully
-		fmt.Fprintf(os.Stderr, "Warning: Could not parse base URL for instructions: %v\n", err)
+		output.PrintWarning("Could not parse base URL for instructions: %v", err)
 		return
 	}
 	host := u.Host
@@ -1599,7 +1600,7 @@ func printFederatedInstructions(baseURL, objectID string, warnings *[]string) {
 func printFederatedCompleteInstructions(baseURL, objectID, connectionName string) {
 	u, err := url.Parse(baseURL)
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "Warning: Could not parse base URL for instructions: %v\n", err)
+		output.PrintWarning("Could not parse base URL for instructions: %v", err)
 		return
 	}
 	host := u.Host

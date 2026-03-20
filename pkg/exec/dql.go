@@ -361,23 +361,6 @@ func (r *DQLQueryResponse) GetNotifications() []QueryNotification {
 	return nil
 }
 
-// ANSI color codes
-const (
-	colorReset  = "\033[0m"
-	colorYellow = "\033[33m"
-	colorRed    = "\033[31m"
-	colorCyan   = "\033[36m"
-)
-
-// isStderrTerminal checks if stderr is a terminal (for color output)
-func isStderrTerminal() bool {
-	fi, err := os.Stderr.Stat()
-	if err != nil {
-		return false
-	}
-	return (fi.Mode() & os.ModeCharDevice) != 0
-}
-
 // getHintForNotification returns a CLI hint for a given notification type or message
 func getHintForNotification(notificationType, message string) string {
 	hints := map[string]string{
@@ -410,8 +393,6 @@ func getHintForNotification(notificationType, message string) string {
 
 // PrintNotifications prints query notifications/warnings to stderr
 func (e *DQLExecutor) PrintNotifications(notifications []QueryNotification) {
-	useColor := isStderrTerminal()
-
 	for _, n := range notifications {
 		severity := n.Severity
 		if severity == "" {
@@ -419,32 +400,16 @@ func (e *DQLExecutor) PrintNotifications(notifications []QueryNotification) {
 		}
 		// Print warnings and errors prominently to stderr
 		if severity == "WARNING" || severity == "WARN" {
-			if useColor {
-				fmt.Fprintf(os.Stderr, "%sWarning:%s %s\n", colorYellow, colorReset, n.Message)
-			} else {
-				fmt.Fprintf(os.Stderr, "Warning: %s\n", n.Message)
-			}
+			output.PrintWarning("%s", n.Message)
 			// Print hint if available
 			if hint := getHintForNotification(n.NotificationType, n.Message); hint != "" {
-				if useColor {
-					fmt.Fprintf(os.Stderr, "%sHint:%s %s\n", colorCyan, colorReset, hint)
-				} else {
-					fmt.Fprintf(os.Stderr, "Hint: %s\n", hint)
-				}
+				output.PrintHint("%s", hint)
 			}
 		} else if severity == "ERROR" {
-			if useColor {
-				fmt.Fprintf(os.Stderr, "%sError:%s %s\n", colorRed, colorReset, n.Message)
-			} else {
-				fmt.Fprintf(os.Stderr, "Error: %s\n", n.Message)
-			}
+			output.PrintHumanError("%s", n.Message)
 			// Print hint for errors too
 			if hint := getHintForNotification(n.NotificationType, n.Message); hint != "" {
-				if useColor {
-					fmt.Fprintf(os.Stderr, "%sHint:%s %s\n", colorCyan, colorReset, hint)
-				} else {
-					fmt.Fprintf(os.Stderr, "Hint: %s\n", hint)
-				}
+				output.PrintHint("%s", hint)
 			}
 		}
 	}

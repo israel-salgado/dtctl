@@ -237,24 +237,25 @@ func describeContext(name string) error {
 		currentMark = " (current)"
 	}
 
-	fmt.Printf("Name:         %s%s\n", found.Name, currentMark)
-	fmt.Printf("Environment:  %s\n", found.Context.Environment)
-	fmt.Printf("Token-Ref:    %s\n", found.Context.TokenRef)
-	fmt.Printf("Safety Level: %s\n", found.Context.GetEffectiveSafetyLevel())
+	const w = 14
+	output.DescribeKV("Name:", w, "%s%s", found.Name, currentMark)
+	output.DescribeKV("Environment:", w, "%s", found.Context.Environment)
+	output.DescribeKV("Token-Ref:", w, "%s", found.Context.TokenRef)
+	output.DescribeKV("Safety Level:", w, "%s", found.Context.GetEffectiveSafetyLevel())
 
 	switch found.Context.GetEffectiveSafetyLevel() {
 	case config.SafetyLevelReadOnly:
-		fmt.Printf("              (No modifications allowed)\n")
+		fmt.Printf("%*s(No modifications allowed)\n", w, "")
 	case config.SafetyLevelReadWriteMine:
-		fmt.Printf("              (Create/update/delete own resources)\n")
+		fmt.Printf("%*s(Create/update/delete own resources)\n", w, "")
 	case config.SafetyLevelReadWriteAll:
-		fmt.Printf("              (Modify all resources, no bucket deletion)\n")
+		fmt.Printf("%*s(Modify all resources, no bucket deletion)\n", w, "")
 	case config.SafetyLevelDangerouslyUnrestricted:
-		fmt.Printf("              (All operations including bucket deletion)\n")
+		fmt.Printf("%*s(All operations including bucket deletion)\n", w, "")
 	}
 
 	if found.Context.Description != "" {
-		fmt.Printf("Description:  %s\n", found.Context.Description)
+		output.DescribeKV("Description:", w, "%s", found.Context.Description)
 	}
 
 	return nil
@@ -287,9 +288,9 @@ func setContext(name, environment, tokenRef, safetyLevel, description string) er
 	if environment != "" {
 		if problems := diagnostic.CheckEnvironmentURL(environment); len(problems) > 0 {
 			for _, p := range problems {
-				fmt.Fprintf(os.Stderr, "Warning: %s\n", p.Message)
+				output.PrintWarning("%s", p.Message)
 				if p.SuggestedURL != "" {
-					fmt.Fprintf(os.Stderr, "  Did you mean: %s\n", p.SuggestedURL)
+					output.PrintHint("Did you mean: %s", p.SuggestedURL)
 				}
 			}
 			fmt.Fprintln(os.Stderr)
