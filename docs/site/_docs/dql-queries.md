@@ -12,7 +12,11 @@ Pass a DQL query string directly as an argument:
 ```bash
 dtctl query "fetch logs | limit 10"
 
-dtctl query "fetch dt.entity.host | fields entity.name, osType | sort entity.name"
+dtctl query "fetch spans | limit 10"
+
+dtctl query "fetch events | limit 10"
+
+dtctl query "timeseries avg(dt.host.cpu.usage)"
 ```
 
 ## File-Based Queries
