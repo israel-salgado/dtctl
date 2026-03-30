@@ -2,6 +2,7 @@ package segment
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -344,6 +345,16 @@ func TestCreate(t *testing.T) {
 			expectError:   true,
 			errorContains: "access denied",
 		},
+		{
+			name: "conflict - segment already exists",
+			input: FilterSegment{
+				Name: "duplicate-segment",
+			},
+			statusCode:    409,
+			responseBody:  `{"error":"segment already exists"}`,
+			expectError:   true,
+			errorContains: "segment already exists",
+		},
 	}
 
 	for _, tt := range tests {
@@ -641,8 +652,18 @@ func TestIsNotFound(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "not found error from Get",
-			err:      fmt.Errorf("segment %q not found", "seg-uid-001"),
+			name:     "direct ErrNotFound",
+			err:      ErrNotFound,
+			expected: true,
+		},
+		{
+			name:     "wrapped ErrNotFound from Get",
+			err:      fmt.Errorf("segment %q: %w", "seg-uid-001", ErrNotFound),
+			expected: true,
+		},
+		{
+			name:     "double-wrapped ErrNotFound",
+			err:      fmt.Errorf("failed: %w", fmt.Errorf("segment %q: %w", "x", ErrNotFound)),
 			expected: true,
 		},
 		{
@@ -656,9 +677,9 @@ func TestIsNotFound(t *testing.T) {
 			expected: false,
 		},
 		{
-			name:     "wrapped not found",
-			err:      fmt.Errorf("failed: %w", fmt.Errorf("segment %q not found", "x")),
-			expected: true,
+			name:     "different sentinel error",
+			err:      errors.New("something else not found"),
+			expected: false,
 		},
 	}
 

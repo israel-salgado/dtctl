@@ -29,7 +29,7 @@ Examples:
   # Dry run to preview
   dtctl create segment -f segment.yaml --dry-run
 `,
-	Aliases: []string{"seg", "filter-segment"},
+	Aliases: []string{"seg", "filter-segment", "filter-segments"},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		file, _ := cmd.Flags().GetString("file")
 
@@ -65,7 +65,7 @@ Examples:
 			if includes, ok := seg["includes"].([]interface{}); ok {
 				fmt.Printf("  Includes: %d rule(s)\n", len(includes))
 			}
-			fmt.Println("\nSegment definition validated successfully")
+			fmt.Println("\nSegment definition parsed successfully")
 			return nil
 		}
 

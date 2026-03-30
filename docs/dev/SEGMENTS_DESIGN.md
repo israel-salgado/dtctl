@@ -326,6 +326,8 @@ Resolution follows the existing pattern: try exact UID first, fall back to name 
 
 ### 2.4 Agent Mode
 
+> **Status: Future work.** Agent mode context enrichment for segments is not yet implemented. The envelope structure below is the planned design.
+
 When segments are used, the agent output envelope's `context` should reflect them:
 
 ```json
@@ -408,7 +410,7 @@ When segments are used, the agent output envelope's `context` should reflect the
 | 10 | Add client-side validation (max 10, no empty IDs) | `cmd/query.go` |
 | 11 | Add enhanced error messages for missing variables | `pkg/exec/dql.go` |
 | 12 | Add unit tests for segment parsing, merging, and variables | `cmd/query_test.go`, `pkg/exec/dql_test.go` |
-| 13 | Add shell completion for `--segment` | `cmd/query.go` |
+| 13 | Add shell completion for `--segment` *(future work)* | `cmd/query.go` |
 
 ### Phase 4: Integration & Polish
 

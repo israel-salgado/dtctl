@@ -18,7 +18,7 @@ import (
 // editSegmentCmd edits a filter segment
 var editSegmentCmd = &cobra.Command{
 	Use:     "segment <uid>",
-	Aliases: []string{"seg", "filter-segment"},
+	Aliases: []string{"seg", "filter-segment", "filter-segments"},
 	Short:   "Edit a filter segment",
 	Long: `Edit a filter segment by opening it in your default editor.
 

@@ -8,7 +8,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [Unreleased]
 
 ### Added
-- **Grail filter segments** — full CRUD support for segment management (`get`, `describe`, `create`, `edit`, `delete`, `apply`) plus query-time filtering via `--segment`/`-S` and `--segments-file` flags on `dtctl query`; segments are AND-combined per Grail semantics with client-side validation (max 10 per query); supports name resolution so you can pass segment names instead of UIDs
+- **Grail filter segments** — full CRUD support for segment management (`get`, `describe`, `create`, `edit`, `delete`, `apply`) plus query-time filtering via `--segment`/`-S`, `--segments-file`, and `--segment-var`/`-V` flags on `dtctl query`; supports inline variable binding with URL-query syntax (`-S "seg?var=val"`); segments are AND-combined per Grail semantics with client-side validation (max 10 per query); supports name resolution so you can pass segment names instead of UIDs
 
 ## [0.20.2] - 2026-03-30
 

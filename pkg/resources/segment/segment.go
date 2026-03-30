@@ -2,11 +2,14 @@ package segment
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
-	"strings"
 
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 )
+
+// ErrNotFound is returned when a segment is not found (HTTP 404).
+var ErrNotFound = errors.New("segment not found")
 
 const basePath = "/platform/storage/filter-segments/v1/filter-segments"
 
@@ -109,7 +112,7 @@ func (h *Handler) Get(uid string) (*FilterSegment, error) {
 	if resp.IsError() {
 		switch resp.StatusCode() {
 		case 404:
-			return nil, fmt.Errorf("segment %q not found", uid)
+			return nil, fmt.Errorf("segment %q: %w", uid, ErrNotFound)
 		default:
 			return nil, fmt.Errorf("failed to get segment: status %d: %s", resp.StatusCode(), resp.String())
 		}
@@ -175,7 +178,7 @@ func (h *Handler) Update(uid string, version int, data []byte) error {
 		case 403:
 			return fmt.Errorf("access denied to update segment %q", uid)
 		case 404:
-			return fmt.Errorf("segment %q not found", uid)
+			return fmt.Errorf("segment %q: %w", uid, ErrNotFound)
 		case 409:
 			return fmt.Errorf("segment version conflict (segment was modified)")
 		default:
@@ -200,7 +203,7 @@ func (h *Handler) Delete(uid string) error {
 		case 403:
 			return fmt.Errorf("access denied to delete segment %q", uid)
 		case 404:
-			return fmt.Errorf("segment %q not found", uid)
+			return fmt.Errorf("segment %q: %w", uid, ErrNotFound)
 		default:
 			return fmt.Errorf("failed to delete segment: status %d: %s", resp.StatusCode(), resp.String())
 		}
@@ -221,8 +224,5 @@ func (h *Handler) GetRaw(uid string) ([]byte, error) {
 
 // IsNotFound returns true if the error indicates a segment was not found (404).
 func IsNotFound(err error) bool {
-	if err == nil {
-		return false
-	}
-	return strings.Contains(err.Error(), "not found")
+	return errors.Is(err, ErrNotFound)
 }

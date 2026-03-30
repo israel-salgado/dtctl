@@ -17,7 +17,7 @@ import (
 // describeSegmentCmd shows detailed info about a segment
 var describeSegmentCmd = &cobra.Command{
 	Use:     "segment <uid>",
-	Aliases: []string{"seg", "filter-segment"},
+	Aliases: []string{"seg", "filter-segment", "filter-segments"},
 	Short:   "Show details of a Grail filter segment",
 	Long: `Show detailed information about a Grail filter segment.
 

@@ -90,15 +90,6 @@ Examples:
 			return err
 		}
 
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
 		c, err := NewClientFromConfig(cfg)
 		if err != nil {
 			return err
@@ -109,6 +100,17 @@ Examples:
 		// Verify segment exists before prompting for confirmation
 		seg, err := handler.Get(uid)
 		if err != nil {
+			return err
+		}
+
+		// Safety check with actual ownership
+		checker, err := NewSafetyChecker(cfg)
+		if err != nil {
+			return err
+		}
+		currentUserID, _ := c.CurrentUserID()
+		ownership := safety.DetermineOwnership(seg.Owner, currentUserID)
+		if err := checker.CheckError(safety.OperationDelete, ownership); err != nil {
 			return err
 		}
 
