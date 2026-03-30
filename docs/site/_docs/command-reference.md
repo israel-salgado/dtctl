@@ -71,6 +71,7 @@ dtctl supports both singular and plural resource names, plus short aliases.
 | `settings-schemas` | `settings-schema` | get, describe |
 | `settings` | — | get, create, update, delete |
 | `buckets` | `bucket` | get, describe, create, delete, apply, watch |
+| `segments` | `segment`, `seg`, `filter-segments`, `filter-segment` | get, describe, create, edit, delete, apply, watch |
 | `lookups` | `lookup` | get, describe, create, delete |
 | `extensions` | `extension`, `ext`, `exts` | get, describe |
 | `extension-configs` | `extension-config`, `ext-configs`, `ext-config` | get, describe, apply |
@@ -148,6 +149,11 @@ dtctl query "..." --default-timeframe-start "2024-01-01T00:00:00Z"
 dtctl query "..." --timezone "Europe/Paris"
 dtctl query "..." --metadata                    # Include execution metadata
 dtctl query "..." --live --interval 5s           # Live mode
+
+# Filter segments
+dtctl query "..." --segment my-segment-uid       # By UID or name (repeatable)
+dtctl query "..." -S seg-1 -S seg-2              # Short form, AND-combined
+dtctl query "..." --segments-file segments.yaml  # Segments with variables
 
 # Verify query syntax
 dtctl verify query "fetch logs | limit 10"

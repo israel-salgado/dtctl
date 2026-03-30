@@ -72,29 +72,29 @@ type FilterSegment struct {
     IsPublic          bool      `json:"isPublic" table:"PUBLIC"`
     Owner             string    `json:"owner,omitempty" table:"OWNER,wide"`
     Version           int       `json:"version,omitempty" table:"-"`
+    IsReadyMade       bool      `json:"isReadyMade,omitempty" table:"-"`
     Includes          []Include `json:"includes,omitempty" table:"-"`
     Variables         *Variables `json:"variables,omitempty" table:"-"`
     AllowedOperations []string  `json:"allowedOperations,omitempty" table:"-"`
 }
 
 type Include struct {
-    DataType string `json:"dataType"`  // "all", "logs", "metrics", "spans", etc.
-    Filter   string `json:"filter"`
+    DataObject string `json:"dataObject"` // "logs", "spans", etc. Use "_all_data_object" for all.
+    Filter     string `json:"filter"`
 }
 
 type Variables struct {
-    Query   string   `json:"query,omitempty"`   // DQL query for dynamic values
-    Columns []string `json:"columns,omitempty"` // Variable column names
+    Type  string `json:"type"`  // Variable type, e.g. "query"
+    Value string `json:"value"` // Variable value, e.g. a DQL expression
 }
 
 type FilterSegmentList struct {
     FilterSegments []FilterSegment `json:"filterSegments"`
     TotalCount     int             `json:"totalCount,omitempty"`
-    NextPageKey    string          `json:"nextPageKey,omitempty"`
 }
 ```
 
-> **Note**: The exact response schema should be confirmed during implementation against a live environment. The structs above are based on the management API path, SDK types, and documented concepts. Adjust field names and nesting as needed once the real responses are observed.
+> **Note**: These structs reflect the actual API response schema as confirmed during implementation. Key differences from the initial design: `Include.DataObject` (not `DataType`), `Variables.Type`/`Value` (not `Query`/`Columns`), no pagination (`FilterSegmentList` has no `NextPageKey`), and `Update` requires an `optimistic-locking-version` query param.
 
 **Handler interface:**
 
@@ -103,7 +103,7 @@ func NewHandler(c *client.Client) *Handler
 func (h *Handler) List() (*FilterSegmentList, error)
 func (h *Handler) Get(uid string) (*FilterSegment, error)
 func (h *Handler) Create(data []byte) (*FilterSegment, error)
-func (h *Handler) Update(uid string, data []byte) error
+func (h *Handler) Update(uid string, version int, data []byte) error
 func (h *Handler) Delete(uid string) error
 func (h *Handler) GetRaw(uid string) ([]byte, error)    // For edit command
 ```
@@ -143,29 +143,27 @@ Owner:         user@example.invalid
 Version:       3
 
 Includes:
-  TYPE              FILTER
-  All data types    k8s.cluster.name = "alpha"
-  Logs              dt.system.bucket = "custom-logs"
+  DATA OBJECT         FILTER
+  All data objects    k8s.cluster.name = "alpha"
+  Logs                dt.system.bucket = "custom-logs"
 
 Variables:
-  Query:    data record(ns="namespace-a"), record(ns="namespace-b")
-  Columns:  ns
+  Type:     query
+  Value:    data record(ns="namespace-a"), record(ns="namespace-b")
 ```
 
 ### 1.5 Example YAML for create/apply
 
 ```yaml
-apiVersion: segment/v1
-kind: FilterSegment
 name: my-k8s-segment
 description: Filters data for Kubernetes cluster alpha
 isPublic: true
 includes:
-  - dataType: all
+  - dataObject: _all_data_object
     filter: 'k8s.cluster.name = "alpha"'
 variables:
-  query: 'data record(ns="namespace-a"), record(ns="namespace-b")'
-  columns: [ns]
+  type: query
+  value: 'data record(ns="namespace-a"), record(ns="namespace-b")'
 ```
 
 ### 1.6 Registration Points

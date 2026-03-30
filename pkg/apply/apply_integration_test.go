@@ -682,3 +682,157 @@ func TestApply_DashboardCreate(t *testing.T) {
 		t.Errorf("expected 'created', got %q", base.Action)
 	}
 }
+
+// --- Apply: Segment create (no UID) ---
+
+func TestApply_SegmentCreate_NoUID(t *testing.T) {
+	srv, c := newApplyTestServer(t, map[string]http.HandlerFunc{
+		"/platform/storage/filter-segments/v1/filter-segments": func(w http.ResponseWriter, r *http.Request) {
+			if r.Method != http.MethodPost {
+				t.Errorf("expected POST, got %s", r.Method)
+			}
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"uid":  "seg-new-001",
+				"name": "Test Segment",
+			})
+		},
+		"/platform/metadata/v1/user": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		},
+	})
+	defer srv.Close()
+	a := NewApplier(c)
+
+	segJSON := `{"name":"Test Segment","isPublic":true,"includes":[{"dataObject":"logs","filter":"status == \"ERROR\""}]}`
+	results, err := a.Apply([]byte(segJSON), ApplyOptions{})
+	if err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	segBase := results[0].(*SegmentApplyResult).ApplyResultBase
+	if segBase.Action != ActionCreated {
+		t.Errorf("expected 'created', got %q", segBase.Action)
+	}
+	if segBase.ID != "seg-new-001" {
+		t.Errorf("expected ID 'seg-new-001', got %q", segBase.ID)
+	}
+}
+
+// --- Apply: Segment update (UID exists) ---
+
+func TestApply_SegmentUpdate_Exists(t *testing.T) {
+	srv, c := newApplyTestServer(t, map[string]http.HandlerFunc{
+		"/platform/storage/filter-segments/v1/filter-segments/seg-uid-001": func(w http.ResponseWriter, r *http.Request) {
+			switch r.Method {
+			case http.MethodGet:
+				json.NewEncoder(w).Encode(map[string]interface{}{
+					"uid":     "seg-uid-001",
+					"name":    "Existing Segment",
+					"version": 3,
+					"owner":   "user@example.invalid",
+				})
+			case http.MethodPut:
+				lockVer := r.URL.Query().Get("optimistic-locking-version")
+				if lockVer != "3" {
+					t.Errorf("expected optimistic-locking-version=3, got %q", lockVer)
+				}
+				w.WriteHeader(http.StatusOK)
+			default:
+				t.Errorf("unexpected method %s", r.Method)
+			}
+		},
+		"/platform/metadata/v1/user": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		},
+	})
+	defer srv.Close()
+	a := NewApplier(c)
+
+	segJSON := `{"uid":"seg-uid-001","name":"Updated Segment","isPublic":true,"includes":[{"dataObject":"logs","filter":"status == \"ERROR\""}]}`
+	results, err := a.Apply([]byte(segJSON), ApplyOptions{})
+	if err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	segBase := results[0].(*SegmentApplyResult).ApplyResultBase
+	if segBase.Action != ActionUpdated {
+		t.Errorf("expected 'updated', got %q", segBase.Action)
+	}
+}
+
+// --- Apply: Segment with UID but not found → create ---
+
+func TestApply_SegmentCreate_IDNotFound(t *testing.T) {
+	srv, c := newApplyTestServer(t, map[string]http.HandlerFunc{
+		"/platform/storage/filter-segments/v1/filter-segments/seg-missing": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusNotFound)
+		},
+		"/platform/storage/filter-segments/v1/filter-segments": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusCreated)
+			json.NewEncoder(w).Encode(map[string]interface{}{
+				"uid":  "seg-missing",
+				"name": "New Segment",
+			})
+		},
+		"/platform/metadata/v1/user": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		},
+	})
+	defer srv.Close()
+	a := NewApplier(c)
+
+	segJSON := `{"uid":"seg-missing","name":"New Segment","isPublic":false,"includes":[{"dataObject":"logs","filter":"status == \"ERROR\""}]}`
+	results, err := a.Apply([]byte(segJSON), ApplyOptions{})
+	if err != nil {
+		t.Fatalf("Apply() error = %v", err)
+	}
+	if len(results) != 1 {
+		t.Fatalf("expected 1 result, got %d", len(results))
+	}
+	segBase := results[0].(*SegmentApplyResult).ApplyResultBase
+	if segBase.Action != ActionCreated {
+		t.Errorf("expected 'created', got %q", segBase.Action)
+	}
+}
+
+// --- Apply: Segment with UID, Get returns server error → should NOT fall through to create ---
+
+func TestApply_Segment_GetServerError_NoFallthrough(t *testing.T) {
+	srv, c := newApplyTestServer(t, map[string]http.HandlerFunc{
+		"/platform/storage/filter-segments/v1/filter-segments/seg-uid-001": func(w http.ResponseWriter, r *http.Request) {
+			// Return a 500 server error (not a 404)
+			w.WriteHeader(http.StatusInternalServerError)
+			fmt.Fprint(w, "internal server error")
+		},
+		"/platform/metadata/v1/user": func(w http.ResponseWriter, r *http.Request) {
+			w.WriteHeader(http.StatusUnauthorized)
+		},
+	})
+	defer srv.Close()
+	a := NewApplier(c)
+
+	segJSON := `{"uid":"seg-uid-001","name":"Test Segment","isPublic":true,"includes":[{"dataObject":"logs","filter":"status == \"ERROR\""}]}`
+	_, err := a.Apply([]byte(segJSON), ApplyOptions{})
+	if err == nil {
+		t.Fatal("Apply() should have returned an error for server error, got nil")
+	}
+	// The error should mention "failed to check segment existence", not fall through to create
+	expected := "failed to check segment existence"
+	if !stringContains(err.Error(), expected) {
+		t.Errorf("expected error containing %q, got: %v", expected, err)
+	}
+}
+
+func stringContains(s, substr string) bool {
+	for i := 0; i <= len(s)-len(substr); i++ {
+		if s[i:i+len(substr)] == substr {
+			return true
+		}
+	}
+	return false
+}

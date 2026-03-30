@@ -37,6 +37,7 @@ storage:spans:read
 storage:system:read
 storage:fieldsets:read
 storage:buckets:read
+storage:filter-segments:read
 settings:objects:read
 settings:schemas:read
 app-engine:apps:read
@@ -69,6 +70,8 @@ automation:rules:write
 document:documents:write
 document:documents:delete
 document:trash-documents:delete
+storage:filter-segments:write
+storage:filter-segments:delete
 settings:objects:write
 extension:extensions:write
 davis:analyzers:write
@@ -160,6 +163,15 @@ storage:fieldsets:write
 | List / Describe buckets | `storage:buckets:read` |
 | Create / Update buckets | `storage:buckets:write` |
 | Delete buckets | `storage:buckets:delete` |
+
+### Filter Segments
+
+| Operation | Required Scope |
+|---|---|
+| List / Get / Describe | `storage:filter-segments:read` |
+| Create / Update / Apply | `storage:filter-segments:write` |
+| Delete | `storage:filter-segments:delete` |
+| Use in queries (`--segment`) | `storage:filter-segments:read` |
 
 ### SLOs
 

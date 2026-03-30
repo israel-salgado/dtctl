@@ -2,9 +2,13 @@ package cmd
 
 import (
 	"fmt"
+	"io"
+	"os"
 	"strings"
 
 	"github.com/spf13/cobra"
+	"golang.org/x/text/cases"
+	"golang.org/x/text/language"
 
 	"github.com/dynatrace-oss/dtctl/pkg/output"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/segment"
@@ -45,56 +49,7 @@ Examples:
 
 		// For table output, show detailed human-readable information
 		if outputFormat == "table" {
-			const w = 16
-			output.DescribeKV("Name:", w, "%s", seg.Name)
-			output.DescribeKV("UID:", w, "%s", seg.UID)
-			if seg.Description != "" {
-				output.DescribeKV("Description:", w, "%s", seg.Description)
-			}
-			if seg.IsPublic {
-				output.DescribeKV("Public:", w, "Yes")
-			} else {
-				output.DescribeKV("Public:", w, "No")
-			}
-			if seg.Owner != "" {
-				output.DescribeKV("Owner:", w, "%s", seg.Owner)
-			}
-			output.DescribeKV("Version:", w, "%d", seg.Version)
-
-			// Includes
-			if len(seg.Includes) > 0 {
-				fmt.Println()
-				output.DescribeSection("Includes:")
-				fmt.Printf("  %-20s %s\n", "DATA OBJECT", "FILTER")
-				for _, inc := range seg.Includes {
-					dataObject := inc.DataObject
-					if dataObject == "_all_data_object" {
-						dataObject = "All data objects"
-					} else {
-						dataObject = strings.Title(dataObject) //nolint:staticcheck
-					}
-					fmt.Printf("  %-20s %s\n", dataObject, inc.Filter)
-				}
-			}
-
-			// Variables
-			if seg.Variables != nil {
-				fmt.Println()
-				output.DescribeSection("Variables:")
-				if seg.Variables.Type != "" {
-					output.DescribeKV("  Type:", 12, "%s", seg.Variables.Type)
-				}
-				if seg.Variables.Value != "" {
-					output.DescribeKV("  Value:", 12, "%s", seg.Variables.Value)
-				}
-			}
-
-			// Allowed operations
-			if len(seg.AllowedOperations) > 0 {
-				fmt.Println()
-				output.DescribeKV("Operations:", w, "%s", strings.Join(seg.AllowedOperations, ", "))
-			}
-
+			printSegmentDescribeTable(os.Stdout, seg)
 			return nil
 		}
 
@@ -103,4 +58,57 @@ Examples:
 		enrichAgent(printer, "describe", "segment")
 		return printer.Print(seg)
 	},
+}
+
+// printSegmentDescribeTable renders a segment in the human-readable describe table format.
+func printSegmentDescribeTable(w io.Writer, seg *segment.FilterSegment) {
+	const kw = 16
+	output.FprintDescribeKV(w, "Name:", kw, "%s", seg.Name)
+	output.FprintDescribeKV(w, "UID:", kw, "%s", seg.UID)
+	if seg.Description != "" {
+		output.FprintDescribeKV(w, "Description:", kw, "%s", seg.Description)
+	}
+	if seg.IsPublic {
+		output.FprintDescribeKV(w, "Public:", kw, "Yes")
+	} else {
+		output.FprintDescribeKV(w, "Public:", kw, "No")
+	}
+	if seg.Owner != "" {
+		output.FprintDescribeKV(w, "Owner:", kw, "%s", seg.Owner)
+	}
+	output.FprintDescribeKV(w, "Version:", kw, "%d", seg.Version)
+
+	// Includes
+	if len(seg.Includes) > 0 {
+		fmt.Fprintln(w)
+		output.FprintDescribeSection(w, "Includes:")
+		fmt.Fprintf(w, "  %-20s %s\n", "DATA OBJECT", "FILTER")
+		for _, inc := range seg.Includes {
+			dataObject := inc.DataObject
+			if dataObject == "_all_data_object" {
+				dataObject = "All data objects"
+			} else {
+				dataObject = cases.Title(language.Und).String(dataObject)
+			}
+			fmt.Fprintf(w, "  %-20s %s\n", dataObject, inc.Filter)
+		}
+	}
+
+	// Variables
+	if seg.Variables != nil {
+		fmt.Fprintln(w)
+		output.FprintDescribeSection(w, "Variables:")
+		if seg.Variables.Type != "" {
+			output.FprintDescribeKV(w, "  Type:", 12, "%s", seg.Variables.Type)
+		}
+		if seg.Variables.Value != "" {
+			output.FprintDescribeKV(w, "  Value:", 12, "%s", seg.Variables.Value)
+		}
+	}
+
+	// Allowed operations
+	if len(seg.AllowedOperations) > 0 {
+		fmt.Fprintln(w)
+		output.FprintDescribeKV(w, "Operations:", kw, "%s", strings.Join(seg.AllowedOperations, ", "))
+	}
 }

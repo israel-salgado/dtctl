@@ -1,0 +1,17 @@
+Name:           Kubernetes Alpha
+UID:            a1b2c3d4-e5f6-4a7b-8c9d-seg000000001
+Description:    Filters data for Kubernetes cluster alpha
+Public:         Yes
+Owner:          admin@example.invalid
+Version:        3
+
+Includes:
+  DATA OBJECT          FILTER
+  All data objects     k8s.cluster.name = "alpha"
+  Logs                 dt.system.bucket = "custom-logs"
+
+Variables:
+  Type:     query
+  Value:    fetch logs | limit 1
+
+Operations:     READ, WRITE, DELETE

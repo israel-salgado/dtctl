@@ -328,10 +328,14 @@ func detectResourceType(data []byte) (ResourceType, error) {
 		}
 	}
 
-	// Filter segments have "includes" array and "name" but no workflow/bucket/SLO markers
+	// Filter segments: "includes" + "isPublic" is a positive, segment-specific marker.
+	// We also check for "name" since it's required, and exclude known overlapping resources.
 	if _, hasIncludes := raw["includes"]; hasIncludes {
+		if _, hasIsPublic := raw["isPublic"]; hasIsPublic {
+			return ResourceSegment, nil
+		}
+		// Fallback: "includes" + "name" without workflow/bucket/SLO markers
 		if _, hasName := raw["name"]; hasName {
-			// Distinguish from other resources: segments don't have tasks, bucketName, or criteria
 			_, hasTasks := raw["tasks"]
 			_, hasBucketName := raw["bucketName"]
 			_, hasCriteria := raw["criteria"]
@@ -1611,6 +1615,12 @@ func (a *Applier) applySegment(data []byte) (ApplyResult, error) {
 	// Check if segment exists
 	existing, err := handler.Get(uid)
 	if err != nil {
+		// Only fall through to create if the error is a 404 (not found).
+		// Other errors (network, 500, 403) should be surfaced immediately.
+		if !segment.IsNotFound(err) {
+			return nil, fmt.Errorf("failed to check segment existence: %w", err)
+		}
+
 		// Segment doesn't exist, create it
 		if err := a.checkSafety(safety.OperationCreate, safety.OwnershipUnknown); err != nil {
 			return nil, err

@@ -3,6 +3,7 @@ package segment
 import (
 	"encoding/json"
 	"fmt"
+	"strings"
 
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 )
@@ -196,4 +197,12 @@ func (h *Handler) GetRaw(uid string) ([]byte, error) {
 	}
 
 	return json.MarshalIndent(seg, "", "  ")
+}
+
+// IsNotFound returns true if the error indicates a segment was not found (404).
+func IsNotFound(err error) bool {
+	if err == nil {
+		return false
+	}
+	return strings.Contains(err.Error(), "not found")
 }

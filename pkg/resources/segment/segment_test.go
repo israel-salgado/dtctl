@@ -628,3 +628,46 @@ func TestGetRaw(t *testing.T) {
 		}
 	})
 }
+
+func TestIsNotFound(t *testing.T) {
+	tests := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "nil error",
+			err:      nil,
+			expected: false,
+		},
+		{
+			name:     "not found error from Get",
+			err:      fmt.Errorf("segment %q not found", "seg-uid-001"),
+			expected: true,
+		},
+		{
+			name:     "generic error",
+			err:      fmt.Errorf("failed to get segment: status 500: internal error"),
+			expected: false,
+		},
+		{
+			name:     "access denied error",
+			err:      fmt.Errorf("access denied to get segment"),
+			expected: false,
+		},
+		{
+			name:     "wrapped not found",
+			err:      fmt.Errorf("failed: %w", fmt.Errorf("segment %q not found", "x")),
+			expected: true,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			got := IsNotFound(tt.err)
+			if got != tt.expected {
+				t.Errorf("IsNotFound(%v) = %v, want %v", tt.err, got, tt.expected)
+			}
+		})
+	}
+}

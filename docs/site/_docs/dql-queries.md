@@ -111,6 +111,47 @@ dtctl query "fetch logs" --max-result-bytes 52428800
 dtctl query "fetch logs" --default-scan-limit-gbytes 500
 ```
 
+## Filter Segments
+
+Apply [filter segments](segments) at query time to narrow results to specific data subsets. Segments are AND-combined when multiple are specified. See [Filter Segments](segments) for how to manage segments.
+
+```bash
+# Apply a single segment by UID
+dtctl query "fetch logs | limit 10" --segment abc123-def456
+
+# Apply a segment by name (resolved via API)
+dtctl query "fetch logs | limit 10" --segment my-k8s-segment
+
+# Multiple segments (AND-combined per Grail semantics)
+dtctl query "fetch logs | limit 10" --segment seg-1 --segment seg-2
+
+# Short form
+dtctl query "fetch logs | limit 10" -S my-segment-uid
+```
+
+For segments that require variable bindings, use a YAML file:
+
+```bash
+dtctl query "fetch logs | limit 10" --segments-file segments.yaml
+```
+
+```yaml
+# segments.yaml
+- id: simple-segment-uid
+
+- id: segment-with-variables
+  variables:
+    - name: host
+      values: [HOST-0000000001, HOST-0000000002]
+
+- id: segment-with-namespace
+  variables:
+    - name: ns
+      values: [production, staging]
+```
+
+Both `--segment` and `--segments-file` can be combined. If the same segment ID appears in both, the file entry wins (it may carry variables). A maximum of 10 segments per query is enforced client-side.
+
 ## Additional Parameters
 
 Fine-tune query execution with these options:
