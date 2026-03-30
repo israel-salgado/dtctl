@@ -42,6 +42,7 @@ func TestParseSegmentFlags(t *testing.T) {
 		input   []string
 		want    []exec.FilterSegmentRef
 		wantErr bool
+		errMsg  string
 	}{
 		{
 			name:  "single segment",
@@ -77,6 +78,74 @@ func TestParseSegmentFlags(t *testing.T) {
 			input: []string{},
 			want:  nil,
 		},
+		// Inline variable tests
+		{
+			name:  "single variable",
+			input: []string{"seg-1?host=HOST-001"},
+			want: []exec.FilterSegmentRef{
+				{ID: "seg-1", Variables: []exec.FilterSegmentVariable{
+					{Name: "host", Values: []string{"HOST-001"}},
+				}},
+			},
+		},
+		{
+			name:  "multiple values comma-separated",
+			input: []string{"seg-1?host=HOST-001,HOST-002"},
+			want: []exec.FilterSegmentRef{
+				{ID: "seg-1", Variables: []exec.FilterSegmentVariable{
+					{Name: "host", Values: []string{"HOST-001", "HOST-002"}},
+				}},
+			},
+		},
+		{
+			name:  "multiple variables with ampersand",
+			input: []string{"seg-1?host=HOST-001&ns=production"},
+			want: []exec.FilterSegmentRef{
+				{ID: "seg-1", Variables: []exec.FilterSegmentVariable{
+					{Name: "host", Values: []string{"HOST-001"}},
+					{Name: "ns", Values: []string{"production"}},
+				}},
+			},
+		},
+		{
+			name:  "segment name with spaces and variables",
+			input: []string{"My Segment?host=HOST-001"},
+			want: []exec.FilterSegmentRef{
+				{ID: "My Segment", Variables: []exec.FilterSegmentVariable{
+					{Name: "host", Values: []string{"HOST-001"}},
+				}},
+			},
+		},
+		{
+			name:    "empty segment ID before ?",
+			input:   []string{"?host=val"},
+			wantErr: true,
+			errMsg:  "segment ID must not be empty",
+		},
+		{
+			name:    "empty variables after ?",
+			input:   []string{"seg-1?"},
+			wantErr: true,
+			errMsg:  "expected variables after '?'",
+		},
+		{
+			name:    "missing equals in variable",
+			input:   []string{"seg-1?hostvalue"},
+			wantErr: true,
+			errMsg:  "expected VARIABLE=VALUE",
+		},
+		{
+			name:    "empty variable name",
+			input:   []string{"seg-1?=value"},
+			wantErr: true,
+			errMsg:  "variable name must not be empty",
+		},
+		{
+			name:    "empty variable value",
+			input:   []string{"seg-1?host="},
+			wantErr: true,
+			errMsg:  `variable "host" value must not be empty`,
+		},
 	}
 
 	for _, tt := range tests {
@@ -86,6 +155,9 @@ func TestParseSegmentFlags(t *testing.T) {
 				t.Fatalf("parseSegmentFlags() error = %v, wantErr %v", err, tt.wantErr)
 			}
 			if tt.wantErr {
+				if tt.errMsg != "" && !strings.Contains(err.Error(), tt.errMsg) {
+					t.Errorf("error %q should contain %q", err.Error(), tt.errMsg)
+				}
 				return
 			}
 			if len(got) != len(tt.want) {
@@ -94,6 +166,23 @@ func TestParseSegmentFlags(t *testing.T) {
 			for i := range got {
 				if got[i].ID != tt.want[i].ID {
 					t.Errorf("ref[%d].ID = %q, want %q", i, got[i].ID, tt.want[i].ID)
+				}
+				if len(got[i].Variables) != len(tt.want[i].Variables) {
+					t.Fatalf("ref[%d] has %d variables, want %d", i, len(got[i].Variables), len(tt.want[i].Variables))
+				}
+				for j := range tt.want[i].Variables {
+					if got[i].Variables[j].Name != tt.want[i].Variables[j].Name {
+						t.Errorf("ref[%d].Variables[%d].Name = %q, want %q", i, j, got[i].Variables[j].Name, tt.want[i].Variables[j].Name)
+					}
+					if len(got[i].Variables[j].Values) != len(tt.want[i].Variables[j].Values) {
+						t.Errorf("ref[%d].Variables[%d] has %d values, want %d", i, j, len(got[i].Variables[j].Values), len(tt.want[i].Variables[j].Values))
+						continue
+					}
+					for k := range tt.want[i].Variables[j].Values {
+						if got[i].Variables[j].Values[k] != tt.want[i].Variables[j].Values[k] {
+							t.Errorf("ref[%d].Variables[%d].Values[%d] = %q, want %q", i, j, k, got[i].Variables[j].Values[k], tt.want[i].Variables[j].Values[k])
+						}
+					}
 				}
 			}
 		})

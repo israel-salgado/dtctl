@@ -1719,9 +1719,7 @@ func TestEnhanceQueryError(t *testing.T) {
 			}`,
 			wantContains: []string{
 				"segment abc123 requires variable",
-				"--segment-var",
-				"-V",
-				"abc123:host=",
+				`-S "abc123?host=`,
 				"--segments-file",
 				"name: host",
 			},
@@ -1741,7 +1739,7 @@ func TestEnhanceQueryError(t *testing.T) {
 			}`,
 			wantContains: []string{
 				"segment seg-id requires variable",
-				"--segment-var",
+				`-S "seg-id?`,
 			},
 		},
 		{

@@ -153,7 +153,7 @@ dtctl query "..." --live --interval 5s           # Live mode
 # Filter segments
 dtctl query "..." --segment my-segment-uid       # By UID or name (repeatable)
 dtctl query "..." -S seg-1 -S seg-2              # Short form, AND-combined
-dtctl query "..." -S seg -V "seg:var=val"        # Bind variables inline
+dtctl query "..." -S "seg?var=val"               # Bind variables inline
 dtctl query "..." --segments-file segments.yaml  # Segments with variables from file
 
 # Verify query syntax

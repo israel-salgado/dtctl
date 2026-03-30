@@ -126,15 +126,14 @@ Examples:
   # Apply multiple segments (AND-combined)
   dtctl query "fetch logs | limit 10" -S seg-uid-1 -S seg-uid-2
 
-  # Bind variables to a segment inline
-  dtctl query "fetch logs | limit 10" -S my-segment -V "my-segment:host=HOST-001"
+  # Bind variables to a segment inline (URL-query style)
+  dtctl query "fetch logs | limit 10" -S "my-segment?host=HOST-001"
 
-  # Multiple values for a variable
-  dtctl query "fetch logs | limit 10" -S my-segment -V "my-segment:host=HOST-001,HOST-002"
+  # Multiple values for a variable (comma-separated)
+  dtctl query "fetch logs | limit 10" -S "my-segment?host=HOST-001,HOST-002"
 
   # Multiple variables on one segment
-  dtctl query "fetch logs | limit 10" -S my-segment \
-    -V "my-segment:host=HOST-001" -V "my-segment:ns=production"
+  dtctl query "fetch logs | limit 10" -S "my-segment?host=HOST-001&ns=production"
 
   # Apply segments with variables from a YAML file
   dtctl query "fetch logs | limit 10" --segments-file segments.yaml
@@ -413,15 +412,63 @@ Examples:
 // maxSegmentsPerQuery is the maximum number of filter segments allowed per query (Dynatrace limit).
 const maxSegmentsPerQuery = 10
 
-// parseSegmentFlags parses --segment flag values into FilterSegmentRef entries (no variables).
+// parseSegmentFlags parses --segment flag values into FilterSegmentRef entries.
+// Each value can be a plain segment ID/name, or include inline variable bindings
+// using URL-query-style syntax: "SEGMENT?var=val&var2=val1,val2"
 func parseSegmentFlags(segmentIDs []string) ([]exec.FilterSegmentRef, error) {
 	var refs []exec.FilterSegmentRef
-	for _, id := range segmentIDs {
-		id = strings.TrimSpace(id)
-		if id == "" {
+	for _, raw := range segmentIDs {
+		raw = strings.TrimSpace(raw)
+		if raw == "" {
 			return nil, fmt.Errorf("--segment value must not be empty")
 		}
-		refs = append(refs, exec.FilterSegmentRef{ID: id})
+
+		id := raw
+		var variables []exec.FilterSegmentVariable
+
+		// Split on first "?" to separate segment ID from inline variables
+		if qIdx := strings.Index(raw, "?"); qIdx >= 0 {
+			id = strings.TrimSpace(raw[:qIdx])
+			queryStr := raw[qIdx+1:]
+
+			if id == "" {
+				return nil, fmt.Errorf("invalid --segment %q: segment ID must not be empty", raw)
+			}
+			if queryStr == "" {
+				return nil, fmt.Errorf("invalid --segment %q: expected variables after '?'", raw)
+			}
+
+			// Parse "var=val&var2=val1,val2" pairs
+			pairs := strings.Split(queryStr, "&")
+			for _, pair := range pairs {
+				pair = strings.TrimSpace(pair)
+				if pair == "" {
+					continue
+				}
+				eqIdx := strings.Index(pair, "=")
+				if eqIdx < 0 {
+					return nil, fmt.Errorf("invalid --segment %q: expected VARIABLE=VALUE in %q", raw, pair)
+				}
+				varName := strings.TrimSpace(pair[:eqIdx])
+				valuesStr := strings.TrimSpace(pair[eqIdx+1:])
+				if varName == "" {
+					return nil, fmt.Errorf("invalid --segment %q: variable name must not be empty", raw)
+				}
+				if valuesStr == "" {
+					return nil, fmt.Errorf("invalid --segment %q: variable %q value must not be empty", raw, varName)
+				}
+				values := strings.Split(valuesStr, ",")
+				for i, v := range values {
+					values[i] = strings.TrimSpace(v)
+				}
+				variables = append(variables, exec.FilterSegmentVariable{
+					Name:   varName,
+					Values: values,
+				})
+			}
+		}
+
+		refs = append(refs, exec.FilterSegmentRef{ID: id, Variables: variables})
 	}
 	return refs, nil
 }
@@ -654,11 +701,12 @@ bare --decode-snapshots simplifies variant wrappers to plain values;
 	queryCmd.Flags().Lookup("decode-snapshots").NoOptDefVal = "simplified"
 
 	// Filter segment flags
-	queryCmd.Flags().StringArrayP("segment", "S", nil, "filter segment ID or name to apply to the query (repeatable, max 10, AND-combined)")
+	queryCmd.Flags().StringArrayP("segment", "S", nil, `filter segment ID or name (repeatable, max 10, AND-combined)
+supports inline variables: -S "SEGMENT?var=val&var2=val1,val2"`)
 	queryCmd.Flags().String("segments-file", "", "YAML file with filter segment definitions (supports variables)")
-	queryCmd.Flags().StringArrayP("segment-var", "V", nil, `bind a variable to a segment (repeatable)
+	queryCmd.Flags().StringArrayP("segment-var", "V", nil, `override a segment variable (repeatable)
 format: SEGMENT:VARIABLE=VALUE[,VALUE,...]
-example: -V "my-segment:host=HOST-001,HOST-002"`)
+takes precedence over --segments-file variables`)
 
 	// Shell completion for --metadata field names (supports comma-separated values)
 	_ = queryCmd.RegisterFlagCompletionFunc("metadata", metadataFieldCompletion)

@@ -354,7 +354,7 @@ func enhanceQueryError(statusCode int, body []byte) error {
 }
 
 // formatSegmentVariableError produces a helpful error message when a segment
-// requires variable bindings, including ready-to-use --segment-var and --segments-file examples.
+// requires variable bindings, including ready-to-use -S inline and --segments-file examples.
 func formatSegmentVariableError(apiErr dqlErrorResponse) error {
 	args := apiErr.Error.Details.Arguments
 	// Arguments: ["`<segmentID>`", "`<dataObject>`", "$<variableName>"]
@@ -368,8 +368,8 @@ func formatSegmentVariableError(apiErr dqlErrorResponse) error {
 	}
 
 	return fmt.Errorf("segment %s requires variable %q\n\n"+
-		"Bind the variable inline with --segment-var:\n\n"+
-		"  dtctl query \"...\" -S %s -V \"%s:%s=your-value-here\"\n\n"+
+		"Bind the variable inline on -S using URL-query syntax:\n\n"+
+		"  dtctl query \"...\" -S \"%s?%s=your-value-here\"\n\n"+
 		"Or use --segments-file with a YAML file for complex cases:\n\n"+
 		"  # segments.yaml\n"+
 		"  - id: %s\n"+
@@ -377,7 +377,7 @@ func formatSegmentVariableError(apiErr dqlErrorResponse) error {
 		"      - name: %s\n"+
 		"        values: [\"your-value-here\"]\n\n"+
 		"  dtctl query \"...\" --segments-file segments.yaml",
-		segmentID, variableName, segmentID, segmentID, variableName, segmentID, variableName)
+		segmentID, variableName, segmentID, variableName, segmentID, variableName)
 }
 
 // VerifyQuery verifies a DQL query without executing it
