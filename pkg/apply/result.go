@@ -87,3 +87,8 @@ type ExtensionConfigApplyResult struct {
 type SegmentApplyResult struct {
 	ApplyResultBase `yaml:",inline"`
 }
+
+// AnomalyDetectorApplyResult is the result of applying a custom anomaly detector.
+type AnomalyDetectorApplyResult struct {
+	ApplyResultBase `yaml:",inline"`
+}

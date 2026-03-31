@@ -11,6 +11,7 @@ import (
 
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 	"github.com/dynatrace-oss/dtctl/pkg/output"
+	"github.com/dynatrace-oss/dtctl/pkg/resources/anomalydetector"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azureconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azuremonitoringconfig"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/bucket"
@@ -105,6 +106,7 @@ const (
 	ResourceGCPMonitoringConfig   ResourceType = "gcp_monitoring_config"
 	ResourceExtensionConfig       ResourceType = "extension_config"
 	ResourceSegment               ResourceType = "segment"
+	ResourceAnomalyDetector       ResourceType = "anomaly_detector"
 	ResourceUnknown               ResourceType = "unknown"
 )
 
@@ -170,6 +172,8 @@ func (a *Applier) Apply(fileData []byte, opts ApplyOptions) ([]ApplyResult, erro
 		result, err = a.applyExtensionConfig(jsonData)
 	case ResourceSegment:
 		result, err = a.applySegment(jsonData)
+	case ResourceAnomalyDetector:
+		result, err = a.applyAnomalyDetector(jsonData)
 	default:
 		return nil, fmt.Errorf("unsupported resource type: %s", resourceType)
 	}
@@ -205,6 +209,10 @@ func detectResourceType(data []byte) (ResourceType, error) {
 	}
 	if schema, ok := raw["schemaId"].(string); ok && schema == gcpconnection.SchemaID {
 		return ResourceGCPConnection, nil
+	}
+	// Anomaly Detector detection (raw Settings format)
+	if schema, ok := raw["schemaId"].(string); ok && schema == anomalydetector.SchemaID {
+		return ResourceAnomalyDetector, nil
 	}
 
 	// Azure Monitoring Config detection
@@ -315,6 +323,9 @@ func detectResourceType(data []byte) (ResourceType, error) {
 		if schemaIDValue == gcpconnection.SchemaID {
 			return ResourceGCPConnection, nil
 		}
+		if schemaIDValue == anomalydetector.SchemaID {
+			return ResourceAnomalyDetector, nil
+		}
 		if _, hasScope := raw["scope"]; hasScope {
 			if _, hasValue := raw["value"]; hasValue {
 				if scope, ok := raw["scope"].(string); ok && scope == "integration-gcp" {
@@ -324,6 +335,17 @@ func detectResourceType(data []byte) (ResourceType, error) {
 					return ResourceAzureMonitoringConfig, nil
 				}
 				return ResourceSettings, nil
+			}
+		}
+	}
+
+	// Anomaly Detector detection (flattened format): "analyzer" with "name" subfield + "eventTemplate"
+	if analyzerRaw, hasAnalyzer := raw["analyzer"]; hasAnalyzer {
+		if _, hasEventTemplate := raw["eventTemplate"]; hasEventTemplate {
+			if analyzerMap, ok := analyzerRaw.(map[string]interface{}); ok {
+				if _, hasName := analyzerMap["name"]; hasName {
+					return ResourceAnomalyDetector, nil
+				}
 			}
 		}
 	}
@@ -1658,6 +1680,62 @@ func (a *Applier) applySegment(data []byte) (ApplyResult, error) {
 			ResourceType: "segment",
 			ID:           uid,
 			Name:         name,
+		},
+	}, nil
+}
+
+// applyAnomalyDetector applies a custom anomaly detector resource.
+// Supports both flattened YAML format and raw Settings API format.
+func (a *Applier) applyAnomalyDetector(data []byte) (ApplyResult, error) {
+	var raw map[string]interface{}
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("failed to parse anomaly detector JSON: %w", err)
+	}
+
+	handler := anomalydetector.NewHandler(a.client)
+
+	// Extract object ID (present in raw Settings format or if user includes it)
+	objectID, _ := raw["objectId"].(string)
+	if objectID == "" {
+		objectID, _ = raw["objectid"].(string)
+	}
+
+	if objectID == "" {
+		// No objectId — create new anomaly detector
+		if err := a.checkSafety(safety.OperationCreate, safety.OwnershipUnknown); err != nil {
+			return nil, err
+		}
+
+		result, err := handler.Create(data)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create anomaly detector: %w", err)
+		}
+		return &AnomalyDetectorApplyResult{
+			ApplyResultBase: ApplyResultBase{
+				Action:       ActionCreated,
+				ResourceType: "anomaly_detector",
+				ID:           result.ObjectID,
+				Name:         result.Title,
+			},
+		}, nil
+	}
+
+	// objectId present — update existing anomaly detector
+	if err := a.checkSafety(safety.OperationUpdate, safety.OwnershipUnknown); err != nil {
+		return nil, err
+	}
+
+	result, err := handler.Update(objectID, data)
+	if err != nil {
+		return nil, fmt.Errorf("failed to update anomaly detector: %w", err)
+	}
+
+	return &AnomalyDetectorApplyResult{
+		ApplyResultBase: ApplyResultBase{
+			Action:       ActionUpdated,
+			ResourceType: "anomaly_detector",
+			ID:           result.ObjectID,
+			Name:         result.Title,
 		},
 	}, nil
 }

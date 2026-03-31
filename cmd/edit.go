@@ -40,4 +40,5 @@ func init() {
 	editCmd.AddCommand(editDocumentCmd)
 	editCmd.AddCommand(editSettingCmd)
 	editCmd.AddCommand(editSegmentCmd)
+	editCmd.AddCommand(editAnomalyDetectorCmd)
 }

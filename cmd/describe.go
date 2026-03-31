@@ -365,4 +365,5 @@ func init() {
 	describeCmd.AddCommand(describeExtensionConfigCmd)
 	describeCmd.AddCommand(describeDocumentCmd)
 	describeCmd.AddCommand(describeSegmentCmd)
+	describeCmd.AddCommand(describeAnomalyDetectorCmd)
 }

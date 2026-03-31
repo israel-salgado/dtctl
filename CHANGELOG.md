@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Custom anomaly detector support** — full CRUD for custom anomaly detectors (`builtin:davis.anomaly-detectors`): `get`, `describe`, `create`, `edit`, `delete`, and `apply`; accepts both flattened YAML format (human-friendly, recommended) and raw Settings API format; source defaults to `"dtctl"` when omitted; `describe` includes recent problems cross-reference via DQL; filter by enabled state with `--enabled` / `--enabled=false`; alias `ad` for brevity (e.g., `dtctl get ad`)
+
 ## [0.21.0] - 2026-03-30
 
 ### Added

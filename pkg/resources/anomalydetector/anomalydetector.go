@@ -1,0 +1,649 @@
+// Package anomalydetector provides a handler for custom anomaly detectors
+// (Settings schema: builtin:davis.anomaly-detectors).
+package anomalydetector
+
+import (
+	"encoding/json"
+	"fmt"
+	"sort"
+	"strings"
+
+	"github.com/dynatrace-oss/dtctl/pkg/client"
+)
+
+const (
+	SchemaID    = "builtin:davis.anomaly-detectors"
+	Scope       = "environment"
+	SettingsAPI = "/platform/classic/environment-api/v2/settings/objects"
+)
+
+// Handler handles anomaly detector resources.
+type Handler struct {
+	client *client.Client
+}
+
+// NewHandler creates a new anomaly detector handler.
+func NewHandler(c *client.Client) *Handler {
+	return &Handler{client: c}
+}
+
+// AnomalyDetector represents a custom anomaly detector (builtin:davis.anomaly-detectors).
+type AnomalyDetector struct {
+	ObjectID string `json:"objectId" table:"OBJECT ID,wide"`
+
+	// Flattened fields for table display
+	Title         string `json:"title" table:"TITLE"`
+	Enabled       bool   `json:"enabled" table:"ENABLED"`
+	AnalyzerShort string `json:"analyzer" table:"ANALYZER"`
+	EventType     string `json:"eventType" table:"EVENT TYPE"`
+	Source        string `json:"source,omitempty" table:"SOURCE"`
+	Description   string `json:"description,omitempty" table:"DESCRIPTION,wide"`
+
+	// Full value for JSON/YAML output and describe
+	Value map[string]any `json:"value" table:"-"`
+
+	// Raw settings metadata (not shown in table)
+	SchemaVersion string `json:"schemaVersion,omitempty" table:"-"`
+}
+
+// ListOptions configures listing behavior.
+type ListOptions struct {
+	Enabled *bool // nil = no filter, true = enabled only, false = disabled only
+}
+
+// listResponse is the raw Settings API response shape.
+type listResponse struct {
+	Items       []settingsItem `json:"items"`
+	TotalCount  int            `json:"totalCount"`
+	NextPageKey string         `json:"nextPageKey,omitempty"`
+}
+
+// settingsItem is the raw Settings API item shape.
+type settingsItem struct {
+	ObjectID      string         `json:"objectId"`
+	SchemaID      string         `json:"schemaId"`
+	SchemaVersion string         `json:"schemaVersion"`
+	Scope         string         `json:"scope"`
+	Value         map[string]any `json:"value"`
+}
+
+// createResponse is the response from Settings API create operations.
+type createResponse struct {
+	ObjectID string `json:"objectId"`
+	Code     int    `json:"code,omitempty"`
+	Error    *struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	} `json:"error,omitempty"`
+}
+
+// flatten converts a raw settings item into an AnomalyDetector with flattened table fields.
+func flatten(item settingsItem) AnomalyDetector {
+	ad := AnomalyDetector{
+		ObjectID:      item.ObjectID,
+		Value:         item.Value,
+		SchemaVersion: item.SchemaVersion,
+	}
+
+	if v, ok := item.Value["title"].(string); ok {
+		ad.Title = v
+	}
+	if v, ok := item.Value["enabled"].(bool); ok {
+		ad.Enabled = v
+	}
+	if v, ok := item.Value["description"].(string); ok {
+		ad.Description = v
+	}
+	if v, ok := item.Value["source"].(string); ok {
+		ad.Source = v
+	}
+
+	// Derive analyzer short form
+	ad.AnalyzerShort = deriveAnalyzerShort(item.Value)
+
+	// Derive event type
+	ad.EventType = deriveEventType(item.Value)
+
+	return ad
+}
+
+// deriveAnalyzerShort produces the compact analyzer display string.
+// E.g., "static (>90)", "auto-adaptive"
+func deriveAnalyzerShort(value map[string]any) string {
+	analyzer, ok := value["analyzer"].(map[string]any)
+	if !ok {
+		return ""
+	}
+
+	name, _ := analyzer["name"].(string)
+	input := ExtractKVMap(analyzer, "input")
+
+	switch {
+	case strings.Contains(name, "StaticThreshold"):
+		condition, _ := input["alertCondition"]
+		threshold, _ := input["threshold"]
+		op := ">"
+		if condition == "BELOW" {
+			op = "<"
+		}
+		if threshold != "" {
+			return fmt.Sprintf("static (%s%s)", op, threshold)
+		}
+		return "static"
+	case strings.Contains(name, "AutoAdaptive"):
+		return "auto-adaptive"
+	default:
+		// Unknown analyzer — show abbreviated name
+		parts := strings.Split(name, ".")
+		if len(parts) > 0 {
+			return parts[len(parts)-1]
+		}
+		return name
+	}
+}
+
+// deriveEventType extracts the event.type from eventTemplate properties.
+func deriveEventType(value map[string]any) string {
+	et, ok := value["eventTemplate"].(map[string]any)
+	if !ok {
+		return ""
+	}
+
+	props := extractKVSlice(et, "properties")
+	for _, prop := range props {
+		if prop["key"] == "event.type" {
+			if v, ok := prop["value"].(string); ok {
+				return v
+			}
+		}
+	}
+	return ""
+}
+
+// extractEventName extracts the event.name from eventTemplate properties.
+func ExtractEventName(value map[string]any) string {
+	et, ok := value["eventTemplate"].(map[string]any)
+	if !ok {
+		return ""
+	}
+
+	props := extractKVSlice(et, "properties")
+	for _, prop := range props {
+		if prop["key"] == "event.name" {
+			if v, ok := prop["value"].(string); ok {
+				return v
+			}
+		}
+	}
+	return ""
+}
+
+// ExtractKVMap reads the "input" or "properties" field which in the API is
+// stored as [{key, value}] and returns it as a simple map.
+// It also handles the case where the field is already a map (flattened format).
+func ExtractKVMap(parent map[string]any, field string) map[string]string {
+	result := make(map[string]string)
+
+	raw, ok := parent[field]
+	if !ok {
+		return result
+	}
+
+	// Case 1: already a map (flattened format)
+	if m, ok := raw.(map[string]any); ok {
+		for k, v := range m {
+			result[k] = fmt.Sprintf("%v", v)
+		}
+		return result
+	}
+
+	// Case 2: [{key, value}] array (API format)
+	if arr, ok := raw.([]any); ok {
+		for _, item := range arr {
+			if obj, ok := item.(map[string]any); ok {
+				k, _ := obj["key"].(string)
+				v := fmt.Sprintf("%v", obj["value"])
+				if k != "" {
+					result[k] = v
+				}
+			}
+		}
+	}
+
+	return result
+}
+
+// extractKVSlice reads a field that is stored as [{key, value}] and returns
+// a slice of maps for iteration.
+func extractKVSlice(parent map[string]any, field string) []map[string]any {
+	raw, ok := parent[field]
+	if !ok {
+		return nil
+	}
+
+	arr, ok := raw.([]any)
+	if !ok {
+		return nil
+	}
+
+	var result []map[string]any
+	for _, item := range arr {
+		if obj, ok := item.(map[string]any); ok {
+			result = append(result, obj)
+		}
+	}
+	return result
+}
+
+// List returns all custom anomaly detectors, optionally filtered.
+func (h *Handler) List(opts ListOptions) ([]AnomalyDetector, error) {
+	var allItems []settingsItem
+	nextPageKey := ""
+
+	for {
+		req := h.client.HTTP().R()
+
+		// Settings API rejects ALL other params when nextPageKey is present.
+		if nextPageKey != "" {
+			req.SetQueryParam("nextPageKey", nextPageKey)
+		} else {
+			req.SetQueryParam("schemaIds", SchemaID)
+			req.SetQueryParam("scopes", Scope)
+			req.SetQueryParam("pageSize", "500")
+		}
+
+		var result listResponse
+		req.SetResult(&result)
+
+		resp, err := req.Get(SettingsAPI)
+		if err != nil {
+			return nil, fmt.Errorf("failed to list anomaly detectors: %w", err)
+		}
+		if resp.IsError() {
+			return nil, fmt.Errorf("failed to list anomaly detectors: status %d: %s", resp.StatusCode(), resp.String())
+		}
+
+		allItems = append(allItems, result.Items...)
+
+		if result.NextPageKey == "" {
+			break
+		}
+		nextPageKey = result.NextPageKey
+	}
+
+	// Flatten and filter
+	var detectors []AnomalyDetector
+	for _, item := range allItems {
+		ad := flatten(item)
+
+		// Apply enabled filter
+		if opts.Enabled != nil && ad.Enabled != *opts.Enabled {
+			continue
+		}
+
+		detectors = append(detectors, ad)
+	}
+
+	// Sort by title
+	sort.Slice(detectors, func(i, j int) bool {
+		return detectors[i].Title < detectors[j].Title
+	})
+
+	return detectors, nil
+}
+
+// Get retrieves a single anomaly detector by object ID.
+func (h *Handler) Get(objectID string) (*AnomalyDetector, error) {
+	var raw settingsItem
+	req := h.client.HTTP().R().SetResult(&raw)
+
+	resp, err := req.Get(fmt.Sprintf("%s/%s", SettingsAPI, objectID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to get anomaly detector: %w", err)
+	}
+	if resp.IsError() {
+		switch resp.StatusCode() {
+		case 404:
+			return nil, fmt.Errorf("anomaly detector %q not found", objectID)
+		case 403:
+			return nil, fmt.Errorf("access denied to anomaly detector %q", objectID)
+		default:
+			return nil, fmt.Errorf("failed to get anomaly detector: status %d: %s", resp.StatusCode(), resp.String())
+		}
+	}
+
+	ad := flatten(raw)
+	return &ad, nil
+}
+
+// GetRaw returns the raw settings value as JSON bytes, suitable for editing.
+func (h *Handler) GetRaw(objectID string) ([]byte, error) {
+	ad, err := h.Get(objectID)
+	if err != nil {
+		return nil, err
+	}
+	return json.MarshalIndent(ad.Value, "", "  ")
+}
+
+// FindByName searches for an anomaly detector by title (case-insensitive prefix match).
+// Returns the first match if found.
+func (h *Handler) FindByName(name string) (*AnomalyDetector, error) {
+	detectors, err := h.List(ListOptions{})
+	if err != nil {
+		return nil, err
+	}
+
+	nameLower := strings.ToLower(name)
+
+	// Exact match first
+	for i := range detectors {
+		if strings.ToLower(detectors[i].Title) == nameLower {
+			return &detectors[i], nil
+		}
+	}
+
+	// Prefix match
+	for i := range detectors {
+		if strings.HasPrefix(strings.ToLower(detectors[i].Title), nameLower) {
+			return &detectors[i], nil
+		}
+	}
+
+	return nil, fmt.Errorf("anomaly detector with title %q not found", name)
+}
+
+// Create creates a new anomaly detector from JSON data.
+// Accepts both flattened format and raw Settings API format.
+func (h *Handler) Create(data []byte) (*AnomalyDetector, error) {
+	apiBody, err := toAPIFormat(data)
+	if err != nil {
+		return nil, fmt.Errorf("invalid anomaly detector definition: %w", err)
+	}
+
+	// POST expects an array
+	body := []map[string]any{apiBody}
+
+	resp, err := h.client.HTTP().R().SetBody(body).Post(SettingsAPI)
+	if err != nil {
+		return nil, fmt.Errorf("failed to create anomaly detector: %w", err)
+	}
+	if resp.IsError() {
+		switch resp.StatusCode() {
+		case 400:
+			return nil, fmt.Errorf("invalid anomaly detector: %s", resp.String())
+		case 403:
+			return nil, fmt.Errorf("access denied to create anomaly detector")
+		case 404:
+			return nil, fmt.Errorf("schema %q not found", SchemaID)
+		default:
+			return nil, fmt.Errorf("failed to create anomaly detector: status %d: %s", resp.StatusCode(), resp.String())
+		}
+	}
+
+	var createResp []createResponse
+	if err := json.Unmarshal(resp.Body(), &createResp); err != nil {
+		return nil, fmt.Errorf("failed to parse create response: %w", err)
+	}
+	if len(createResp) == 0 {
+		return nil, fmt.Errorf("no items returned in create response")
+	}
+	if createResp[0].Error != nil {
+		return nil, fmt.Errorf("create failed: %s", createResp[0].Error.Message)
+	}
+
+	return h.Get(createResp[0].ObjectID)
+}
+
+// Update updates an existing anomaly detector.
+func (h *Handler) Update(objectID string, data []byte) (*AnomalyDetector, error) {
+	// Get current object for version
+	existing, err := h.Get(objectID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Parse the update data
+	value, err := toAPIValue(data)
+	if err != nil {
+		return nil, fmt.Errorf("invalid anomaly detector definition: %w", err)
+	}
+
+	body := map[string]any{"value": value}
+
+	resp, err := h.client.HTTP().R().
+		SetBody(body).
+		SetHeader("If-Match", existing.SchemaVersion).
+		Put(fmt.Sprintf("%s/%s", SettingsAPI, objectID))
+	if err != nil {
+		return nil, fmt.Errorf("failed to update anomaly detector: %w", err)
+	}
+	if resp.IsError() {
+		switch resp.StatusCode() {
+		case 400:
+			return nil, fmt.Errorf("invalid anomaly detector: %s", resp.String())
+		case 403:
+			return nil, fmt.Errorf("access denied to update anomaly detector %q", objectID)
+		case 404:
+			return nil, fmt.Errorf("anomaly detector %q not found", objectID)
+		case 409, 412:
+			return nil, fmt.Errorf("anomaly detector version conflict (object was modified)")
+		default:
+			return nil, fmt.Errorf("failed to update anomaly detector: status %d: %s", resp.StatusCode(), resp.String())
+		}
+	}
+
+	return h.Get(objectID)
+}
+
+// Delete deletes an anomaly detector by object ID.
+func (h *Handler) Delete(objectID string) error {
+	resp, err := h.client.HTTP().R().Delete(fmt.Sprintf("%s/%s", SettingsAPI, objectID))
+	if err != nil {
+		return fmt.Errorf("failed to delete anomaly detector: %w", err)
+	}
+	if resp.IsError() {
+		switch resp.StatusCode() {
+		case 403:
+			return fmt.Errorf("access denied to delete anomaly detector %q", objectID)
+		case 404:
+			return fmt.Errorf("anomaly detector %q not found", objectID)
+		default:
+			return fmt.Errorf("failed to delete anomaly detector: status %d: %s", resp.StatusCode(), resp.String())
+		}
+	}
+	return nil
+}
+
+// toAPIFormat converts input data (flattened or raw Settings format) into the
+// Settings API create body: {schemaId, scope, value}.
+func toAPIFormat(data []byte) (map[string]any, error) {
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	// Raw Settings format: has schemaId
+	if schema, ok := raw["schemaId"].(string); ok && schema == SchemaID {
+		// Already in API format
+		if _, ok := raw["scope"]; !ok {
+			raw["scope"] = Scope
+		}
+		return raw, nil
+	}
+
+	// Flattened format: convert to API format
+	value, err := flattenedToAPIValue(raw)
+	if err != nil {
+		return nil, err
+	}
+
+	return map[string]any{
+		"schemaId": SchemaID,
+		"scope":    Scope,
+		"value":    value,
+	}, nil
+}
+
+// toAPIValue extracts just the value portion suitable for PUT updates.
+func toAPIValue(data []byte) (map[string]any, error) {
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return nil, fmt.Errorf("invalid JSON: %w", err)
+	}
+
+	// If it has "schemaId", extract the "value" field
+	if _, ok := raw["schemaId"]; ok {
+		if v, ok := raw["value"].(map[string]any); ok {
+			return v, nil
+		}
+		return nil, fmt.Errorf("raw Settings format missing 'value' field")
+	}
+
+	// Flattened format: convert to API value
+	return flattenedToAPIValue(raw)
+}
+
+// flattenedToAPIValue converts the human-friendly YAML format into the API's value shape.
+// Converts analyzer.input from map to [{key, value}] and eventTemplate from map to
+// {properties: [{key, value}]}.
+func flattenedToAPIValue(raw map[string]any) (map[string]any, error) {
+	value := make(map[string]any)
+
+	// Required fields
+	title, _ := raw["title"].(string)
+	if title == "" {
+		return nil, fmt.Errorf("'title' is required")
+	}
+	value["title"] = title
+
+	// Optional fields
+	if v, ok := raw["enabled"]; ok {
+		value["enabled"] = v
+	} else {
+		value["enabled"] = true
+	}
+
+	if v, ok := raw["description"].(string); ok {
+		value["description"] = v
+	}
+
+	// Source defaults to "dtctl" when omitted
+	source, _ := raw["source"].(string)
+	if source == "" {
+		source = "dtctl"
+	}
+	value["source"] = source
+
+	// Analyzer
+	analyzer, ok := raw["analyzer"].(map[string]any)
+	if !ok {
+		return nil, fmt.Errorf("'analyzer' is required and must be an object")
+	}
+
+	apiAnalyzer := make(map[string]any)
+	if name, ok := analyzer["name"].(string); ok {
+		apiAnalyzer["name"] = name
+	} else {
+		return nil, fmt.Errorf("'analyzer.name' is required")
+	}
+
+	// Convert analyzer input from map to [{key, value}] array
+	if input, ok := analyzer["input"].(map[string]any); ok {
+		apiAnalyzer["input"] = mapToKVArray(input)
+	}
+
+	value["analyzer"] = apiAnalyzer
+
+	// Event template: convert from map to {properties: [{key, value}]}
+	if et, ok := raw["eventTemplate"].(map[string]any); ok {
+		value["eventTemplate"] = map[string]any{
+			"properties": mapToKVArray(et),
+		}
+	}
+
+	// Execution settings (pass through as-is if present)
+	if es, ok := raw["executionSettings"]; ok {
+		value["executionSettings"] = es
+	}
+
+	return value, nil
+}
+
+// mapToKVArray converts a map to the [{key, value}] format used by the Settings API.
+func mapToKVArray(m map[string]any) []map[string]any {
+	var result []map[string]any
+	for k, v := range m {
+		result = append(result, map[string]any{
+			"key":   k,
+			"value": fmt.Sprintf("%v", v),
+		})
+	}
+	// Sort for deterministic output
+	sort.Slice(result, func(i, j int) bool {
+		return result[i]["key"].(string) < result[j]["key"].(string)
+	})
+	return result
+}
+
+// ToFlattenedYAML converts an AnomalyDetector's Value into the human-friendly
+// flattened format used for editing.
+func ToFlattenedYAML(value map[string]any) map[string]any {
+	flat := make(map[string]any)
+
+	if v, ok := value["title"]; ok {
+		flat["title"] = v
+	}
+	if v, ok := value["description"]; ok {
+		flat["description"] = v
+	}
+	if v, ok := value["enabled"]; ok {
+		flat["enabled"] = v
+	}
+	if v, ok := value["source"]; ok {
+		flat["source"] = v
+	}
+
+	// Flatten analyzer
+	if analyzer, ok := value["analyzer"].(map[string]any); ok {
+		flatAnalyzer := make(map[string]any)
+		if name, ok := analyzer["name"]; ok {
+			flatAnalyzer["name"] = name
+		}
+		// Convert input from [{key, value}] to map
+		flatAnalyzer["input"] = ExtractKVMap(analyzer, "input")
+		flat["analyzer"] = flatAnalyzer
+	}
+
+	// Flatten eventTemplate
+	if et, ok := value["eventTemplate"].(map[string]any); ok {
+		flat["eventTemplate"] = ExtractKVMap(et, "properties")
+	}
+
+	// Pass through execution settings
+	if es, ok := value["executionSettings"]; ok {
+		flat["executionSettings"] = es
+	}
+
+	return flat
+}
+
+// IsRawSettingsFormat checks if JSON data is in raw Settings API format.
+func IsRawSettingsFormat(data []byte) bool {
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return false
+	}
+	schema, ok := raw["schemaId"].(string)
+	return ok && schema == SchemaID
+}
+
+// IsFlattenedFormat checks if JSON data is in the flattened anomaly detector format.
+func IsFlattenedFormat(data []byte) bool {
+	var raw map[string]any
+	if err := json.Unmarshal(data, &raw); err != nil {
+		return false
+	}
+	_, hasAnalyzer := raw["analyzer"]
+	_, hasEventTemplate := raw["eventTemplate"]
+	return hasAnalyzer && hasEventTemplate
+}

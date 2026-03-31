@@ -1,0 +1,148 @@
+package cmd
+
+import (
+	"bytes"
+	"encoding/json"
+	"fmt"
+	"os"
+	"os/exec"
+
+	"github.com/spf13/cobra"
+
+	"github.com/dynatrace-oss/dtctl/pkg/output"
+	"github.com/dynatrace-oss/dtctl/pkg/resources/anomalydetector"
+	"github.com/dynatrace-oss/dtctl/pkg/safety"
+	"github.com/dynatrace-oss/dtctl/pkg/util/format"
+)
+
+// editAnomalyDetectorCmd edits an anomaly detector
+var editAnomalyDetectorCmd = &cobra.Command{
+	Use:     "anomaly-detector <id-or-title>",
+	Aliases: []string{"ad"},
+	Short:   "Edit a custom anomaly detector",
+	Long: `Edit a custom anomaly detector by opening it in your default editor.
+
+The detector configuration will be fetched, converted to the flattened YAML
+format for readability, opened in your editor (defined by EDITOR env var,
+defaults to vim), and updated when you save and close the editor.
+
+Examples:
+  # Edit by object ID
+  dtctl edit anomaly-detector <object-id>
+
+  # Edit by title
+  dtctl edit anomaly-detector "High CPU on production hosts"
+`,
+	Args: cobra.ExactArgs(1),
+	RunE: func(cmd *cobra.Command, args []string) error {
+		identifier := args[0]
+
+		cfg, err := LoadConfig()
+		if err != nil {
+			return err
+		}
+
+		// Safety check
+		checker, err := NewSafetyChecker(cfg)
+		if err != nil {
+			return err
+		}
+		if err := checker.CheckError(safety.OperationUpdate, safety.OwnershipUnknown); err != nil {
+			return err
+		}
+
+		c, err := NewClientFromConfig(cfg)
+		if err != nil {
+			return err
+		}
+
+		handler := anomalydetector.NewHandler(c)
+
+		// Resolve identifier to anomaly detector
+		ad, err := resolveAnomalyDetector(handler, identifier)
+		if err != nil {
+			return err
+		}
+
+		// Convert to flattened YAML for editing
+		flattened := anomalydetector.ToFlattenedYAML(ad.Value)
+		flatJSON, err := json.Marshal(flattened)
+		if err != nil {
+			return fmt.Errorf("failed to marshal flattened value: %w", err)
+		}
+
+		editData, err := format.JSONToYAML(flatJSON)
+		if err != nil {
+			return fmt.Errorf("failed to convert to YAML: %w", err)
+		}
+
+		// Create a temp file
+		tmpfile, err := os.CreateTemp("", "dtctl-anomaly-detector-*.yaml")
+		if err != nil {
+			return fmt.Errorf("failed to create temp file: %w", err)
+		}
+		defer os.Remove(tmpfile.Name())
+
+		if _, err := tmpfile.Write(editData); err != nil {
+			return fmt.Errorf("failed to write temp file: %w", err)
+		}
+		if err := tmpfile.Close(); err != nil {
+			return fmt.Errorf("failed to close temp file: %w", err)
+		}
+
+		// Get the editor
+		editor := os.Getenv("EDITOR")
+		if editor == "" {
+			editor = cfg.Preferences.Editor
+		}
+		if editor == "" {
+			editor = "vim"
+		}
+
+		// Open the editor
+		editorCmd := exec.Command(editor, tmpfile.Name())
+		editorCmd.Stdin = os.Stdin
+		editorCmd.Stdout = os.Stdout
+		editorCmd.Stderr = os.Stderr
+
+		if err := editorCmd.Run(); err != nil {
+			return fmt.Errorf("editor failed: %w", err)
+		}
+
+		// Read the edited file
+		editedData, err := os.ReadFile(tmpfile.Name())
+		if err != nil {
+			return fmt.Errorf("failed to read edited file: %w", err)
+		}
+
+		// Convert edited data to JSON (auto-detect format)
+		jsonData, err := format.ValidateAndConvert(editedData)
+		if err != nil {
+			return fmt.Errorf("invalid format: %w", err)
+		}
+
+		// Check if anything changed
+		var originalCompact, editedCompact bytes.Buffer
+		if err := json.Compact(&originalCompact, flatJSON); err != nil {
+			return fmt.Errorf("failed to compact original JSON: %w", err)
+		}
+		if err := json.Compact(&editedCompact, jsonData); err != nil {
+			return fmt.Errorf("failed to compact edited JSON: %w", err)
+		}
+
+		if bytes.Equal(originalCompact.Bytes(), editedCompact.Bytes()) {
+			fmt.Println("Edit cancelled, no changes made.")
+			return nil
+		}
+
+		// Update the anomaly detector
+		result, err := handler.Update(ad.ObjectID, jsonData)
+		if err != nil {
+			return err
+		}
+
+		output.PrintSuccess("Anomaly detector %q updated", result.Title)
+		output.PrintInfo("  Object ID: %s", result.ObjectID)
+		return nil
+	},
+}

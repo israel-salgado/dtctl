@@ -9,6 +9,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/dynatrace-oss/dtctl/pkg/resources/anomalydetector"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/appengine"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azureconnection"
 	"github.com/dynatrace-oss/dtctl/pkg/resources/azuremonitoringconfig"
@@ -418,6 +419,102 @@ func describeSegmentFixture() segment.FilterSegment {
 	return segmentFixtures()[0]
 }
 
+func anomalyDetectorFixtures() []anomalydetector.AnomalyDetector {
+	return []anomalydetector.AnomalyDetector{
+		{
+			ObjectID:      "vu9U3hXa3q0AAAABACdidWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAA",
+			Title:         "Aurora cluster CPU utilization",
+			Enabled:       true,
+			AnalyzerShort: "static (>90)",
+			EventType:     "PERFORMANCE_EVENT",
+			Source:        "Clouds",
+			Description:   "Monitors Aurora cluster CPU utilization to detect performance bottlenecks",
+			Value: map[string]any{
+				"title":       "Aurora cluster CPU utilization",
+				"enabled":     true,
+				"description": "Monitors Aurora cluster CPU utilization to detect performance bottlenecks",
+				"source":      "Clouds",
+				"analyzer": map[string]any{
+					"name": "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer",
+					"input": []any{
+						map[string]any{"key": "alertCondition", "value": "ABOVE"},
+						map[string]any{"key": "threshold", "value": "90"},
+						map[string]any{"key": "slidingWindow", "value": "5"},
+						map[string]any{"key": "violatingSamples", "value": "3"},
+						map[string]any{"key": "dealertingSamples", "value": "5"},
+						map[string]any{"key": "query", "value": "timeseries cpu=avg(cloud.aws.rds.CPUUtilization), interval:1m"},
+					},
+				},
+				"eventTemplate": map[string]any{
+					"properties": []any{
+						map[string]any{"key": "event.type", "value": "PERFORMANCE_EVENT"},
+						map[string]any{"key": "event.name", "value": "Aurora cluster high CPU"},
+						map[string]any{"key": "event.description", "value": "CPU utilization is high"},
+					},
+				},
+			},
+			SchemaVersion: "1.0.15",
+		},
+		{
+			ObjectID:      "xw0V4iYb4r1BBBBBAC1idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAB",
+			Title:         "VPC endpoint packet drops",
+			Enabled:       true,
+			AnalyzerShort: "auto-adaptive",
+			EventType:     "AVAILABILITY_EVENT",
+			Source:        "Clouds",
+			Value: map[string]any{
+				"title":   "VPC endpoint packet drops",
+				"enabled": true,
+				"source":  "Clouds",
+				"analyzer": map[string]any{
+					"name":  "dt.statistics.ui.anomaly_detection.AutoAdaptiveAnomalyDetectionAnalyzer",
+					"input": []any{},
+				},
+				"eventTemplate": map[string]any{
+					"properties": []any{
+						map[string]any{"key": "event.type", "value": "AVAILABILITY_EVENT"},
+						map[string]any{"key": "event.name", "value": "VPC packet drops detected"},
+					},
+				},
+			},
+			SchemaVersion: "1.0.15",
+		},
+		{
+			ObjectID:      "yz1W5jZc5s2CCCCCAD2idWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAC",
+			Title:         "EC2 instance CPU utilization",
+			Enabled:       false,
+			AnalyzerShort: "static (>85)",
+			EventType:     "PERFORMANCE_EVENT",
+			Source:        "dtctl",
+			Description:   "Disabled detector for EC2 CPU monitoring",
+			Value: map[string]any{
+				"title":       "EC2 instance CPU utilization",
+				"enabled":     false,
+				"description": "Disabled detector for EC2 CPU monitoring",
+				"source":      "dtctl",
+				"analyzer": map[string]any{
+					"name": "dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer",
+					"input": []any{
+						map[string]any{"key": "alertCondition", "value": "ABOVE"},
+						map[string]any{"key": "threshold", "value": "85"},
+					},
+				},
+				"eventTemplate": map[string]any{
+					"properties": []any{
+						map[string]any{"key": "event.type", "value": "PERFORMANCE_EVENT"},
+						map[string]any{"key": "event.name", "value": "EC2 high CPU utilization"},
+					},
+				},
+			},
+			SchemaVersion: "1.0.15",
+		},
+	}
+}
+
+func describeAnomalyDetectorFixture() anomalydetector.AnomalyDetector {
+	return anomalyDetectorFixtures()[0]
+}
+
 func monitoringConfigFixtures() []extension.MonitoringConfiguration {
 	return []extension.MonitoringConfiguration{
 		{
@@ -734,6 +831,30 @@ func TestGolden_GetSegments(t *testing.T) {
 				t.Fatalf("PrintList failed: %v", err)
 			}
 			assertGolden(t, "get/segments-"+name, buf.String())
+		})
+	}
+}
+
+func TestGolden_GetAnomalyDetectors(t *testing.T) {
+	detectors := anomalyDetectorFixtures()
+
+	formats := map[string]string{
+		"table": "table",
+		"wide":  "wide",
+		"json":  "json",
+		"yaml":  "yaml",
+		"csv":   "csv",
+		"toon":  "toon",
+	}
+
+	for name, format := range formats {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			printer := NewPrinterWithWriter(format, &buf)
+			if err := printer.PrintList(detectors); err != nil {
+				t.Fatalf("PrintList failed: %v", err)
+			}
+			assertGolden(t, "get/anomalydetectors-"+name, buf.String())
 		})
 	}
 }
@@ -1430,6 +1551,27 @@ func TestGolden_DescribeSegment(t *testing.T) {
 				t.Fatalf("Print failed: %v", err)
 			}
 			assertGolden(t, "describe/segment-"+name, buf.String())
+		})
+	}
+}
+
+func TestGolden_DescribeAnomalyDetector(t *testing.T) {
+	d := describeAnomalyDetectorFixture()
+
+	formats := map[string]string{
+		"json": "json",
+		"yaml": "yaml",
+		"toon": "toon",
+	}
+
+	for name, format := range formats {
+		t.Run(name, func(t *testing.T) {
+			var buf bytes.Buffer
+			printer := NewPrinterWithWriter(format, &buf)
+			if err := printer.Print(d); err != nil {
+				t.Fatalf("Print failed: %v", err)
+			}
+			assertGolden(t, "describe/anomalydetector-"+name, buf.String())
 		})
 	}
 }

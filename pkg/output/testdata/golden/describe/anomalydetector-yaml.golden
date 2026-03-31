@@ -1,0 +1,36 @@
+objectid: vu9U3hXa3q0AAAABACdidWlsdGluOmRhdmlzLmFub21hbHktZGV0ZWN0b3JzAA
+title: Aurora cluster CPU utilization
+enabled: true
+analyzershort: static (>90)
+eventtype: PERFORMANCE_EVENT
+source: Clouds
+description: Monitors Aurora cluster CPU utilization to detect performance bottlenecks
+value:
+  analyzer:
+    input:
+      - key: alertCondition
+        value: ABOVE
+      - key: threshold
+        value: "90"
+      - key: slidingWindow
+        value: "5"
+      - key: violatingSamples
+        value: "3"
+      - key: dealertingSamples
+        value: "5"
+      - key: query
+        value: timeseries cpu=avg(cloud.aws.rds.CPUUtilization), interval:1m
+    name: dt.statistics.ui.anomaly_detection.StaticThresholdAnomalyDetectionAnalyzer
+  description: Monitors Aurora cluster CPU utilization to detect performance bottlenecks
+  enabled: true
+  eventTemplate:
+    properties:
+      - key: event.type
+        value: PERFORMANCE_EVENT
+      - key: event.name
+        value: Aurora cluster high CPU
+      - key: event.description
+        value: CPU utilization is high
+  source: Clouds
+  title: Aurora cluster CPU utilization
+schemaversion: 1.0.15

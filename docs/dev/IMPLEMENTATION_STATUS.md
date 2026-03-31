@@ -78,6 +78,7 @@ This document tracks the current implementation status of dtctl. For future plan
 | extension-config | ✅ | ✅ | - | - | - | ✅ |
 | intent | ✅ | ✅ | - | - | - | - |
 | segment | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
+| anomaly-detector | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 
 #### Cloud Connections
 
@@ -109,6 +110,7 @@ This document tracks the current implementation status of dtctl. For future plan
 | analyzer | - | ✅ | - | - | - | - | - | - |
 | copilot | - | ✅ | - | - | - | - | - | - |
 | segment | - | - | - | - | - | - | - | ✅ |
+| anomaly-detector | - | - | - | - | - | - | - | - |
 
 ### Watch Mode Features
 - [x] Watch all `get` commands: `dtctl get workflows --watch`
@@ -171,6 +173,19 @@ This document tracks the current implementation status of dtctl. For future plan
 - [x] Chat with CoPilot: `dtctl exec copilot "question"` (streaming)
 - [x] NL to DQL: `dtctl exec copilot nl2dql "show error logs"`
 - [x] Document search: `dtctl exec copilot document-search "query"`
+
+### Custom Anomaly Detector Features
+- [x] List detectors: `dtctl get anomaly-detectors` (alias: `ad`)
+- [x] Filter by enabled state: `--enabled` / `--enabled=false`
+- [x] Get detector details: `dtctl describe anomaly-detector <id-or-title>`
+- [x] Create from YAML/JSON: `dtctl create anomaly-detector -f detector.yaml`
+- [x] Edit in $EDITOR: `dtctl edit anomaly-detector <id-or-title>`
+- [x] Delete: `dtctl delete anomaly-detector <id-or-title>`
+- [x] Apply (create/update): `dtctl apply -f detector.yaml`
+- [x] Flattened YAML format (human-friendly) and raw Settings API format
+- [x] Source defaults to `"dtctl"` when omitted
+- [x] Recent problems cross-reference via DQL in describe output
+- [x] Template variables: `--set threshold=95`
 
 ### App Functions Features
 - [x] List all functions: `dtctl get functions`

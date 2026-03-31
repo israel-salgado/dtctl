@@ -38,7 +38,7 @@ Supported resources:
   sdk-versions            analyzers                 copilot-skills
   lookup-tables (lu)      trash                     workflow-executions (wfe)
   wfe-task-result         extensions (ext)          extension-configs (extcfg)
-  documents (doc)
+  documents (doc)         anomaly-detectors (ad)
 
 Use 'dtctl get <resource> --help' for resource-specific options.`,
 	Example: `  # List all workflows
@@ -150,6 +150,7 @@ func init() {
 	getCmd.AddCommand(getExtensionConfigsCmd)
 	getCmd.AddCommand(getDocumentsCmd)
 	getCmd.AddCommand(getSegmentsCmd)
+	getCmd.AddCommand(getAnomalyDetectorsCmd)
 
 	// Delete subcommands (command definitions live in get_*.go files)
 
@@ -166,4 +167,5 @@ func init() {
 	deleteCmd.AddCommand(deleteEdgeConnectCmd)
 	deleteCmd.AddCommand(deleteDocumentCmd)
 	deleteCmd.AddCommand(deleteSegmentCmd)
+	deleteCmd.AddCommand(deleteAnomalyDetectorCmd)
 }

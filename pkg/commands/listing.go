@@ -92,6 +92,7 @@ var ResourceAliases = map[string]string{
 	"ec":   "edgeconnect",
 	"fn":   "functions",
 	"func": "functions",
+	"ad":   "anomaly-detectors",
 }
 
 // hiddenCommands are commands excluded from the listing (internal, utility).

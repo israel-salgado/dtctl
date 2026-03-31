@@ -47,4 +47,5 @@ func init() {
 	createCmd.AddCommand(createEdgeConnectCmd)
 	createCmd.AddCommand(createBreakpointCmd)
 	createCmd.AddCommand(createSegmentCmd)
+	createCmd.AddCommand(createAnomalyDetectorCmd)
 }
