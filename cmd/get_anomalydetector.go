@@ -38,18 +38,12 @@ Examples:
   dtctl get anomaly-detectors -o wide
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := anomalydetector.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific detector if ID provided
 		if len(args) > 0 {
@@ -117,21 +111,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}

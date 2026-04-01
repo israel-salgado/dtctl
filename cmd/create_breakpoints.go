@@ -34,16 +34,8 @@ Examples:
 			return err
 		}
 
-		cfg, err := LoadConfig()
+		cfg, c, err := SetupWithSafety(safety.OperationCreate)
 		if err != nil {
-			return err
-		}
-
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationCreate, safety.OwnershipUnknown); err != nil {
 			return err
 		}
 
@@ -54,11 +46,6 @@ Examples:
 		verbose := isDebugVerbose()
 
 		ctx, err := cfg.CurrentContextObj()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
 		if err != nil {
 			return err
 		}

@@ -29,18 +29,12 @@ Examples:
   dtctl get settings-schemas -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := settings.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific schema if ID provided
 		if len(args) > 0 {
@@ -99,18 +93,12 @@ Examples:
 		schemaID, _ := cmd.Flags().GetString("schema")
 		scope, _ := cmd.Flags().GetString("scope")
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := settings.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific object if ID provided
 		if len(args) > 0 {
@@ -161,21 +149,7 @@ Examples:
 		schemaID, _ := cmd.Flags().GetString("schema")
 		scope, _ := cmd.Flags().GetString("scope")
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}

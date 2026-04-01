@@ -41,12 +41,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -59,7 +54,6 @@ Examples:
 		}
 
 		handler := workflow.NewHandler(c)
-		printer := NewPrinter()
 
 		history, err := handler.ListHistory(workflowID)
 		if err != nil {
@@ -99,12 +93,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -117,7 +106,6 @@ Examples:
 		}
 
 		handler := document.NewHandler(c)
-		printer := NewPrinter()
 
 		snapshots, err := handler.ListSnapshots(dashboardID)
 		if err != nil {
@@ -157,12 +145,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -175,7 +158,6 @@ Examples:
 		}
 
 		handler := document.NewHandler(c)
-		printer := NewPrinter()
 
 		snapshots, err := handler.ListSnapshots(notebookID)
 		if err != nil {
@@ -217,12 +199,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -235,7 +212,6 @@ Examples:
 		}
 
 		handler := document.NewHandler(c)
-		printer := NewPrinter()
 
 		snapshots, err := handler.ListSnapshots(documentID)
 		if err != nil {

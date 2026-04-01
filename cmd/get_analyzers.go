@@ -28,18 +28,12 @@ Examples:
   dtctl get analyzers -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := analyzer.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific analyzer if name provided
 		if len(args) > 0 {
@@ -76,18 +70,12 @@ Examples:
   dtctl get copilot-skills -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := copilot.NewHandler(c)
-		printer := NewPrinter()
 
 		list, err := handler.ListSkills()
 		if err != nil {

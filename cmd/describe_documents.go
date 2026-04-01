@@ -64,12 +64,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -112,12 +107,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -161,12 +151,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -204,12 +189,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		documentID := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -245,7 +225,6 @@ Examples:
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "trash")
 		return printer.Print(doc)
 	},

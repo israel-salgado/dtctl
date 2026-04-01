@@ -545,7 +545,7 @@ func (e *DQLExecutor) printResults(result *DQLQueryResponse, opts DQLExecuteOpti
 			// Wide format: for DQL map results, printMaps() ignores the wide flag,
 			// so output is identical to table format.
 			if len(records) == 0 {
-				fmt.Println("No results found.")
+				return nil // empty result set — nothing to print
 			} else {
 				err = printer.PrintList(records)
 			}
@@ -553,9 +553,9 @@ func (e *DQLExecutor) printResults(result *DQLQueryResponse, opts DQLExecuteOpti
 		if err != nil {
 			return err
 		}
-		// Print metadata footer after the table
+		// Print metadata footer after the table (to stderr so it doesn't break structured output)
 		if meta != nil {
-			fmt.Print(output.FormatMetadataFooter(meta, opts.MetadataFields))
+			fmt.Fprint(os.Stderr, output.FormatMetadataFooter(meta, opts.MetadataFields))
 		}
 		return nil
 
@@ -563,16 +563,16 @@ func (e *DQLExecutor) printResults(result *DQLQueryResponse, opts DQLExecuteOpti
 		if len(records) == 0 {
 			return nil
 		}
-		// Print metadata as comment header before CSV data
+		// Print metadata as comment header before CSV data (to stderr)
 		if meta != nil {
-			fmt.Print(output.FormatMetadataCSVComments(meta, opts.MetadataFields))
+			fmt.Fprint(os.Stderr, output.FormatMetadataCSVComments(meta, opts.MetadataFields))
 		}
 		return printer.PrintList(records)
 
 	case "chart", "sparkline", "spark", "barchart", "bar", "braille", "br":
 		// Chart formats do not support metadata display
 		if meta != nil {
-			fmt.Fprintln(os.Stderr, "Note: --metadata is not supported with chart output formats")
+			output.PrintWarning("--metadata is not supported with chart output formats")
 		}
 		if len(records) > 0 {
 			return printer.Print(map[string]interface{}{"records": records})
@@ -727,8 +727,7 @@ func (e *DQLExecutor) ExecuteFromFile(filename string, outputFormat string) erro
 // printTable prints query results as a table
 func (e *DQLExecutor) printTable(records []map[string]interface{}) error {
 	if len(records) == 0 {
-		fmt.Println("No results found.")
-		return nil
+		return nil // empty result set — nothing to print
 	}
 
 	// Convert to JSON for consistent table printing

@@ -37,18 +37,12 @@ Examples:
   dtctl get intents -o wide
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := appengine.NewIntentHandler(c)
-		printer := NewPrinter()
 
 		// Get specific intent if app-id/intent-id provided
 		if len(args) > 0 {

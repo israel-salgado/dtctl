@@ -119,26 +119,13 @@ Examples:
 			return nil
 		}
 
-		// Load configuration
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
+		// Determine if this is a create or update
 		operation := safety.OperationCreate
 		if isUpdate {
 			operation = safety.OperationUpdate
 		}
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(operation, safety.OwnershipUnknown); err != nil {
-			return err
-		}
 
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(operation)
 		if err != nil {
 			return err
 		}

@@ -31,12 +31,7 @@ Examples:
 			return fmt.Errorf("--config-id is required")
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -89,7 +84,6 @@ Examples:
 		}
 
 		// For other formats (JSON, YAML, etc.), use the printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "extension-config")
 		return printer.Print(config)
 	},

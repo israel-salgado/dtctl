@@ -36,18 +36,12 @@ Examples:
   dtctl get workflows --mine
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := workflow.NewHandler(c)
-		printer := NewPrinter()
 		ap := enrichAgent(printer, "get", "workflow")
 
 		// Get specific workflow if ID provided
@@ -138,18 +132,12 @@ Examples:
   dtctl get wfe -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := workflow.NewExecutionHandler(c)
-		printer := NewPrinter()
 		ap := enrichAgent(printer, "get", "workflow-execution")
 
 		// Get specific execution if ID provided

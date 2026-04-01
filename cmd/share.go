@@ -75,12 +75,7 @@ Examples:
 			return nil
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -193,12 +188,7 @@ Examples:
 			return nil
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

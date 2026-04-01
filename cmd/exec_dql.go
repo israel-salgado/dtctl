@@ -32,12 +32,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		// Show deprecation warning
 		output.PrintWarning("'dtctl exec dql' is deprecated. Use 'dtctl query' instead.")
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

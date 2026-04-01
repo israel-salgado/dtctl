@@ -39,18 +39,12 @@ Examples:
   dtctl get dashboards --mine
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := document.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific dashboard if ID provided
 		if len(args) > 0 {
@@ -129,18 +123,12 @@ Examples:
   dtctl get notebooks --mine
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := document.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific notebook if ID provided
 		if len(args) > 0 {
@@ -224,18 +212,12 @@ Examples:
   dtctl get trash -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := document.NewTrashHandler(c)
-		printer := NewPrinter()
 
 		// Build filter options from flags
 		typeFilter, _ := cmd.Flags().GetString("type")
@@ -305,12 +287,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -379,12 +356,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -453,20 +425,15 @@ Examples:
 `,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
-		if err != nil {
-			return err
-		}
-
-		// Check for --permanent flag
+		// Check for --permanent flag before setup (no API call needed)
 		permanent, _ := cmd.Flags().GetBool("permanent")
 		if !permanent {
 			return fmt.Errorf("--permanent flag is required to delete from trash")
+		}
+
+		_, c, err := SetupWithSafety(safety.OperationDelete)
+		if err != nil {
+			return err
 		}
 
 		handler := document.NewTrashHandler(c)
@@ -560,18 +527,12 @@ Examples:
   dtctl get documents -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := document.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific document if ID provided
 		if len(args) > 0 {
@@ -671,12 +632,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

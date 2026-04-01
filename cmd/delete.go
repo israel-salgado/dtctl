@@ -11,6 +11,9 @@ import (
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 )
 
+// forceDelete skips confirmation prompts for delete and restore commands
+var forceDelete bool
+
 // deleteCmd represents the delete command
 var deleteCmd = &cobra.Command{
 	Use:   "delete",
@@ -27,9 +30,9 @@ deletion — use 'dtctl get trash' to check.
 Supported resources:
   workflows (wf)          dashboards (dash, db)     notebooks (nb)
   slos                    settings                  buckets (bkt)
-  apps                    edgeconnect (ec)           notifications
-  lookup-tables (lu)      trash
-  azure connection        azure monitoring`,
+  apps                    edgeconnect (ec)          notifications
+  lookup-tables (lu)      trash                     segments (seg)
+  anomaly-detectors (ad)  azure connection          azure monitoring`,
 	Example: `  # Delete a workflow by ID
   dtctl delete workflow abc-123
 
@@ -70,21 +73,7 @@ var deleteAzureConnectionCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		client, err := NewClientFromConfig(cfg)
+		_, client, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}
@@ -119,21 +108,7 @@ var deleteAzureMonitoringConfigCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		client, err := NewClientFromConfig(cfg)
+		_, client, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}
@@ -162,6 +137,24 @@ var deleteAzureMonitoringConfigCmd = &cobra.Command{
 
 func init() {
 	rootCmd.AddCommand(deleteCmd)
+
+	// Resource delete subcommands (command definitions live in get_*.go files)
+	deleteCmd.AddCommand(deleteWorkflowCmd)
+	deleteCmd.AddCommand(deleteDashboardCmd)
+	deleteCmd.AddCommand(deleteNotebookCmd)
+	deleteCmd.AddCommand(deleteTrashCmd)
+	deleteCmd.AddCommand(deleteSLOCmd)
+	deleteCmd.AddCommand(deleteNotificationCmd)
+	deleteCmd.AddCommand(deleteBucketCmd)
+	deleteCmd.AddCommand(deleteLookupCmd)
+	deleteCmd.AddCommand(deleteSettingsCmd)
+	deleteCmd.AddCommand(deleteAppCmd)
+	deleteCmd.AddCommand(deleteEdgeConnectCmd)
+	deleteCmd.AddCommand(deleteDocumentCmd)
+	deleteCmd.AddCommand(deleteSegmentCmd)
+	deleteCmd.AddCommand(deleteAnomalyDetectorCmd)
+
+	// Provider delete subcommands
 	deleteCmd.AddCommand(deleteAzureProviderCmd)
 	deleteCmd.AddCommand(deleteAWSProviderCmd)
 	deleteCmd.AddCommand(deleteGCPProviderCmd)

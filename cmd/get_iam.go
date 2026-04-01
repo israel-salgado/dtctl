@@ -27,18 +27,12 @@ Examples:
   dtctl get users -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := iam.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific user if UUID provided
 		if len(args) > 0 {
@@ -78,18 +72,12 @@ Examples:
   dtctl get groups -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := iam.NewHandler(c)
-		printer := NewPrinter()
 
 		// List all groups with optional filter
 		filterStr, _ := cmd.Flags().GetString("filter")

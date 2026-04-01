@@ -10,6 +10,7 @@ import (
 	"github.com/dynatrace-oss/dtctl/pkg/resources/workflow"
 	"github.com/dynatrace-oss/dtctl/pkg/safety"
 	"github.com/dynatrace-oss/dtctl/pkg/util/format"
+
 	"github.com/dynatrace-oss/dtctl/pkg/util/template"
 )
 
@@ -71,22 +72,7 @@ Examples:
 			return nil
 		}
 
-		// Load configuration
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationCreate, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationCreate)
 		if err != nil {
 			return err
 		}

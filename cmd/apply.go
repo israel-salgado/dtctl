@@ -134,13 +134,8 @@ that contains the dashboard ID. The 'create' command always creates new resource
 			return err
 		}
 
-		// dry-run returns nil results (output handled internally on stderr)
-		if results == nil {
-			return nil
-		}
-
 		// Print structured output using the global -o flag.
-		// The concrete type (DashboardApplyResult, WorkflowApplyResult, etc.)
+		// The concrete type (DashboardApplyResult, WorkflowApplyResult, DryRunResult, etc.)
 		// determines which columns/fields appear in the output.
 		printer := NewPrinter()
 

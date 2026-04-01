@@ -126,12 +126,7 @@ Examples:
 			return fmt.Errorf("unsupported output format %q for verify query (supported: json, yaml, toon)", outputFmt)
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

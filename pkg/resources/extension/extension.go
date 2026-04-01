@@ -153,16 +153,14 @@ func (h *Handler) List(name string, chunkSize int64) (*ExtensionList, error) {
 		var result ExtensionList
 		req := h.client.HTTP().R().SetResult(&result)
 
-		// The API rejects requests that combine page-size with next-page-key,
-		// but filter params must be sent on every request (page tokens may not preserve them).
-		if nextPageKey != "" {
-			req.SetQueryParam("next-page-key", nextPageKey)
-		} else if chunkSize > 0 {
-			req.SetQueryParam("page-size", fmt.Sprintf("%d", chunkSize))
-		}
-		if name != "" {
-			req.SetQueryParam("name", name)
-		}
+		client.PaginationParams{
+			Style:         client.PaginationDefault,
+			PageKeyParam:  "next-page-key",
+			PageSizeParam: "page-size",
+			NextPageKey:   nextPageKey,
+			PageSize:      chunkSize,
+			Filters:       map[string]string{"name": name},
+		}.Apply(req)
 
 		resp, err := req.Get("/platform/extensions/v2/extensions")
 
@@ -214,9 +212,11 @@ func (h *Handler) Get(extensionName string) (*ExtensionVersionList, error) {
 		var result ExtensionVersionList
 		req := h.client.HTTP().R().SetResult(&result)
 
-		if nextPageKey != "" {
-			req.SetQueryParam("next-page-key", nextPageKey)
-		}
+		client.PaginationParams{
+			Style:        client.PaginationDefault,
+			PageKeyParam: "next-page-key",
+			NextPageKey:  nextPageKey,
+		}.Apply(req)
 
 		resp, err := req.Get(fmt.Sprintf("/platform/extensions/v2/extensions/%s", url.PathEscape(extensionName)))
 		if err != nil {
@@ -315,16 +315,14 @@ func (h *Handler) ListMonitoringConfigurations(extensionName, version string, ch
 		var result MonitoringConfigurationList
 		req := h.client.HTTP().R().SetResult(&result)
 
-		// The API rejects requests that combine page-size with next-page-key,
-		// but filter params must be sent on every request (page tokens may not preserve them).
-		if nextPageKey != "" {
-			req.SetQueryParam("next-page-key", nextPageKey)
-		} else if chunkSize > 0 {
-			req.SetQueryParam("page-size", fmt.Sprintf("%d", chunkSize))
-		}
-		if version != "" {
-			req.SetQueryParam("version", version)
-		}
+		client.PaginationParams{
+			Style:         client.PaginationDefault,
+			PageKeyParam:  "next-page-key",
+			PageSizeParam: "page-size",
+			NextPageKey:   nextPageKey,
+			PageSize:      chunkSize,
+			Filters:       map[string]string{"version": version},
+		}.Apply(req)
 
 		resp, err := req.Get(fmt.Sprintf("/platform/extensions/v2/extensions/%s/monitoring-configurations", url.PathEscape(extensionName)))
 		if err != nil {

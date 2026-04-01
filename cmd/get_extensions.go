@@ -29,18 +29,12 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		name, _ := cmd.Flags().GetString("name")
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := extension.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific extension versions if name provided as argument
 		if len(args) > 0 {
@@ -83,18 +77,12 @@ Examples:
 		configID, _ := cmd.Flags().GetString("config-id")
 		version, _ := cmd.Flags().GetString("version")
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := extension.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific monitoring configuration if config ID provided
 		if configID != "" {

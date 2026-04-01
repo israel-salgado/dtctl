@@ -64,12 +64,7 @@ Examples:
 			return fmt.Errorf("cannot use --task with --all or --tasks flags")
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

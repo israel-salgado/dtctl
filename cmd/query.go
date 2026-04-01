@@ -143,12 +143,7 @@ Examples:
 			return fmt.Errorf("unsupported output format %q for query", outputFormat)
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

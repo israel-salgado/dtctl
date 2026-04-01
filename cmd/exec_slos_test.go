@@ -23,10 +23,10 @@ func floatPtr(f float64) *float64 {
 // This test verifies the fix: using PrintList() instead of Print() for slices.
 func TestExecSLO_ImmediateResults_TableOutput(t *testing.T) {
 	tests := []struct {
-		name            string
-		responseBody    slo.EvaluationResponse
-		expectError     bool
-		validateOutput  func(*testing.T, string)
+		name           string
+		responseBody   slo.EvaluationResponse
+		expectError    bool
+		validateOutput func(*testing.T, string)
 	}{
 		{
 			name: "single evaluation result with float values",

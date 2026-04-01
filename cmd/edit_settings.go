@@ -46,21 +46,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationUpdate, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupWithSafety(safety.OperationUpdate)
 		if err != nil {
 			return err
 		}

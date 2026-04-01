@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -166,7 +167,7 @@ func (c *Client) SetVerbosity(level int) {
 				sb.WriteString(fmt.Sprintf("BODY:\n%s\n", bodyText))
 			}
 		}
-		fmt.Print(sb.String())
+		fmt.Fprint(os.Stderr, sb.String())
 		return nil
 	})
 
@@ -186,7 +187,7 @@ func (c *Client) SetVerbosity(level int) {
 			}
 			sb.WriteString(fmt.Sprintf("BODY:\n%s\n", resp.String()))
 		}
-		fmt.Print(sb.String())
+		fmt.Fprint(os.Stderr, sb.String())
 		return nil
 	})
 }

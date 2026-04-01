@@ -37,18 +37,12 @@ Examples:
   dtctl get functions -o wide
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := appengine.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific function if app-id/function-name provided
 		if len(args) > 0 {

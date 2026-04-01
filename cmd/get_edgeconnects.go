@@ -29,18 +29,12 @@ Examples:
   dtctl get edgeconnects -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := edgeconnect.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific EdgeConnect if ID provided
 		if len(args) > 0 {
@@ -79,21 +73,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ecID := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}

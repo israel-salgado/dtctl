@@ -231,22 +231,7 @@ func createDocumentRunE(docType string) func(cmd *cobra.Command, args []string) 
 			return nil
 		}
 
-		// Load configuration
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationCreate, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationCreate)
 		if err != nil {
 			return err
 		}

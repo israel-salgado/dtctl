@@ -20,11 +20,7 @@ var describeGCPConnectionCmd = &cobra.Command{
 	Short:   "Show details of a GCP connection",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -51,7 +47,6 @@ var describeGCPConnectionCmd = &cobra.Command{
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "gcp-connection")
 		return printer.Print(item)
 	},
@@ -65,11 +60,7 @@ var describeGCPMonitoringConfigCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -125,7 +116,6 @@ var describeGCPMonitoringConfigCmd = &cobra.Command{
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "gcp-monitoring")
 		return printer.Print(item)
 	},

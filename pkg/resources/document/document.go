@@ -146,18 +146,14 @@ func (h *Handler) List(filters DocumentFilters) (*DocumentList, error) {
 		var result DocumentList
 		req := h.client.HTTP().R().SetResult(&result)
 
-		// Send page-size and filter on every request.
-		// The Document API accepts page-size with page-key (unlike some other DT APIs),
-		// and filter must be resent because the page token does NOT preserve it.
-		if nextPageKey != "" {
-			req.SetQueryParam("page-key", nextPageKey)
-		}
-		if filters.ChunkSize > 0 {
-			req.SetQueryParam("page-size", fmt.Sprintf("%d", filters.ChunkSize))
-		}
-		if filterStr != "" {
-			req.SetQueryParam("filter", filterStr)
-		}
+		client.PaginationParams{
+			Style:         client.PaginationDocumentAPI,
+			PageKeyParam:  "page-key",
+			PageSizeParam: "page-size",
+			NextPageKey:   nextPageKey,
+			PageSize:      int64(filters.ChunkSize),
+			Filters:       map[string]string{"filter": filterStr},
+		}.Apply(req)
 
 		resp, err := req.Get("/platform/document/v1/documents")
 		if err != nil {
@@ -954,9 +950,11 @@ func (h *Handler) ListSnapshots(documentID string) (*SnapshotList, error) {
 		var result SnapshotList
 		req := h.client.HTTP().R().SetResult(&result)
 
-		if nextPageKey != "" {
-			req.SetQueryParam("page-key", nextPageKey)
-		}
+		client.PaginationParams{
+			Style:        client.PaginationDefault,
+			PageKeyParam: "page-key",
+			NextPageKey:  nextPageKey,
+		}.Apply(req)
 
 		resp, err := req.Get(fmt.Sprintf("/platform/document/v1/documents/%s/snapshots", documentID))
 		if err != nil {

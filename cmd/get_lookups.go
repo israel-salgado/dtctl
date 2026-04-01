@@ -49,18 +49,12 @@ Examples:
   dtctl get lookups -o wide
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := lookup.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific lookup if path provided
 		if len(args) > 0 {
@@ -123,21 +117,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}

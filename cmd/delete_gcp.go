@@ -19,20 +19,7 @@ var deleteGCPConnectionCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		client, err := NewClientFromConfig(cfg)
+		_, client, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}
@@ -63,20 +50,7 @@ var deleteGCPMonitoringConfigCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDelete, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		client, err := NewClientFromConfig(cfg)
+		_, client, err := SetupWithSafety(safety.OperationDelete)
 		if err != nil {
 			return err
 		}

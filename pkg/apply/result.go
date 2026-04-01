@@ -92,3 +92,16 @@ type SegmentApplyResult struct {
 type AnomalyDetectorApplyResult struct {
 	ApplyResultBase `yaml:",inline"`
 }
+
+// DryRunResult is the result of a dry-run apply operation.
+// It reports what would happen without actually modifying anything.
+type DryRunResult struct {
+	ApplyResultBase `yaml:",inline"`
+	URL             string   `json:"url,omitempty"        yaml:"url,omitempty"        table:"URL,wide"`
+	ItemCount       int      `json:"itemCount,omitempty"  yaml:"itemCount,omitempty"  table:"ITEMS"`
+	ItemType        string   `json:"itemType,omitempty"   yaml:"itemType,omitempty"   table:"-"`
+	ExistingName    string   `json:"existingName,omitempty" yaml:"existingName,omitempty" table:"-"`
+	ExtensionName   string   `json:"extensionName,omitempty" yaml:"extensionName,omitempty" table:"EXTENSION"`
+	Scope           string   `json:"scope,omitempty"      yaml:"scope,omitempty"      table:"SCOPE"`
+	ValidationWarns []string `json:"validationWarnings,omitempty" yaml:"validationWarnings,omitempty" table:"-"`
+}

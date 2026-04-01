@@ -46,18 +46,12 @@ var getGCPConnectionCmd = &cobra.Command{
 	Short:   "Get GCP connections",
 	Long:    `Get one or more GCP connections (authentication credentials).`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := gcpconnection.NewHandler(c)
-		printer := NewPrinter()
 
 		if len(args) > 0 {
 			identifier := args[0]
@@ -101,18 +95,12 @@ var getGCPConnectionPrincipalCmd = &cobra.Command{
 	Short: "Get Dynatrace GCP principal",
 	Long:  `Get the Dynatrace-managed GCP principal used as consumer in GCP connection impersonation setup.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := gcpconnection.NewHandler(c)
-		printer := NewPrinter()
 
 		principal, err := handler.GetDynatracePrincipal()
 		if err != nil {
@@ -132,18 +120,12 @@ var getGCPMonitoringConfigCmd = &cobra.Command{
 	Short:   "Get GCP monitoring configurations",
 	Long:    `Get one or more GCP monitoring configurations.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := gcpmonitoringconfig.NewHandler(c)
-		printer := NewPrinter()
 
 		if len(args) > 0 {
 			identifier := args[0]
@@ -177,18 +159,12 @@ var getGCPMonitoringConfigLocationsCmd = &cobra.Command{
 	Short:   "Get available GCP monitoring config locations",
 	Long:    `Get available Google Cloud regions for monitoring configuration based on the latest extension schema.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := gcpmonitoringconfig.NewHandler(c)
-		printer := NewPrinter()
 
 		locations, err := handler.ListAvailableLocations()
 		if err != nil {
@@ -205,18 +181,12 @@ var getGCPMonitoringConfigFeatureSetsCmd = &cobra.Command{
 	Short:   "Get available GCP monitoring config feature sets",
 	Long:    `Get available FeatureSetsType values for GCP monitoring configuration based on the latest extension schema.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := gcpmonitoringconfig.NewHandler(c)
-		printer := NewPrinter()
 
 		featureSets, err := handler.ListAvailableFeatureSets()
 		if err != nil {

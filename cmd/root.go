@@ -392,6 +392,58 @@ func GetChunkSize() int64 {
 	return chunkSize
 }
 
+// Setup creates a Config, Client, and Printer for read-only commands.
+// It consolidates the common LoadConfig → NewClientFromConfig → NewPrinter boilerplate.
+func Setup() (*config.Config, *client.Client, output.Printer, error) {
+	cfg, err := LoadConfig()
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	c, err := NewClientFromConfig(cfg)
+	if err != nil {
+		return nil, nil, nil, err
+	}
+	return cfg, c, NewPrinter(), nil
+}
+
+// SetupClient creates a Config and Client without a Printer.
+// Use this for commands that need the client but handle output differently
+// (e.g., exec commands, log streaming, or commands with conditional printers).
+func SetupClient() (*config.Config, *client.Client, error) {
+	cfg, err := LoadConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+	c, err := NewClientFromConfig(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cfg, c, nil
+}
+
+// SetupWithSafety creates a Config + Client for mutating commands, performing a safety
+// check before the client is created. Use this for commands where ownership is unknown
+// (i.e., the resource doesn't need to be fetched first to determine the owner).
+// A Printer is not included because many mutating commands don't use one.
+func SetupWithSafety(op safety.Operation) (*config.Config, *client.Client, error) {
+	cfg, err := LoadConfig()
+	if err != nil {
+		return nil, nil, err
+	}
+	checker, err := NewSafetyChecker(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	if err := checker.CheckError(op, safety.OwnershipUnknown); err != nil {
+		return nil, nil, err
+	}
+	c, err := NewClientFromConfig(cfg)
+	if err != nil {
+		return nil, nil, err
+	}
+	return cfg, c, nil
+}
+
 // NewSafetyChecker creates a new safety checker for the current context
 func NewSafetyChecker(cfg *config.Config) (*safety.Checker, error) {
 	ctx, err := cfg.CurrentContextObj()

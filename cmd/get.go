@@ -61,9 +61,6 @@ Use 'dtctl get <resource> --help' for resource-specific options.`,
 	RunE: requireSubcommand,
 }
 
-// forceDelete skips confirmation prompts
-var forceDelete bool
-
 // executeWithWatch wraps a fetcher function with watch mode support
 func executeWithWatch(cmd *cobra.Command, fetcher watch.ResourceFetcher, printer interface{}) error {
 	watchMode, _ := cmd.Flags().GetBool("watch")
@@ -151,21 +148,4 @@ func init() {
 	getCmd.AddCommand(getDocumentsCmd)
 	getCmd.AddCommand(getSegmentsCmd)
 	getCmd.AddCommand(getAnomalyDetectorsCmd)
-
-	// Delete subcommands (command definitions live in get_*.go files)
-
-	deleteCmd.AddCommand(deleteWorkflowCmd)
-	deleteCmd.AddCommand(deleteDashboardCmd)
-	deleteCmd.AddCommand(deleteNotebookCmd)
-	deleteCmd.AddCommand(deleteTrashCmd)
-	deleteCmd.AddCommand(deleteSLOCmd)
-	deleteCmd.AddCommand(deleteNotificationCmd)
-	deleteCmd.AddCommand(deleteBucketCmd)
-	deleteCmd.AddCommand(deleteLookupCmd)
-	deleteCmd.AddCommand(deleteSettingsCmd)
-	deleteCmd.AddCommand(deleteAppCmd)
-	deleteCmd.AddCommand(deleteEdgeConnectCmd)
-	deleteCmd.AddCommand(deleteDocumentCmd)
-	deleteCmd.AddCommand(deleteSegmentCmd)
-	deleteCmd.AddCommand(deleteAnomalyDetectorCmd)
 }

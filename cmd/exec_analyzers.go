@@ -40,12 +40,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		analyzerName := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

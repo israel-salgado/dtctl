@@ -54,12 +54,7 @@ Examples:
 		extensionName := args[0]
 		versionFlag, _ := cmd.Flags().GetString("version")
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -239,7 +234,6 @@ Examples:
 			MonitoringConfigs:   configSummaries,
 		}
 
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "extension")
 		return printer.Print(desc)
 	},

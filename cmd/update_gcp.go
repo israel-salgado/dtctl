@@ -37,20 +37,7 @@ Examples:
 			return fmt.Errorf("--serviceAccountId is required")
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationUpdate, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationUpdate)
 		if err != nil {
 			return err
 		}
@@ -117,20 +104,7 @@ Examples:
 			return fmt.Errorf("at least one of --locationFiltering or --featureSets is required")
 		}
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationUpdate, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationUpdate)
 		if err != nil {
 			return err
 		}

@@ -49,18 +49,12 @@ var getAzureConnectionCmd = &cobra.Command{
 	Short:   "Get Azure connections",
 	Long:    `Get one or more Azure connections (authentication credentials).`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := azureconnection.NewHandler(c)
-		printer := NewPrinter()
 
 		if len(args) > 0 {
 			identifier := args[0]
@@ -106,18 +100,12 @@ var getAzureMonitoringConfigCmd = &cobra.Command{
 	Short:   "Get Azure monitoring configurations",
 	Long:    `Get one or more Azure monitoring configurations.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := azuremonitoringconfig.NewHandler(c)
-		printer := NewPrinter()
 
 		if len(args) > 0 {
 			identifier := args[0]
@@ -152,18 +140,12 @@ var getAzureMonitoringConfigLocationsCmd = &cobra.Command{
 	Short:   "Get available Azure monitoring config locations",
 	Long:    `Get available Azure regions for Azure monitoring configuration based on the latest extension schema.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := azuremonitoringconfig.NewHandler(c)
-		printer := NewPrinter()
 
 		locations, err := handler.ListAvailableLocations()
 		if err != nil {
@@ -181,18 +163,12 @@ var getAzureMonitoringConfigFeatureSetsCmd = &cobra.Command{
 	Short:   "Get available Azure monitoring config feature sets",
 	Long:    `Get available FeatureSetsType values for Azure monitoring configuration based on the latest extension schema.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := azuremonitoringconfig.NewHandler(c)
-		printer := NewPrinter()
 
 		featureSets, err := handler.ListAvailableFeatureSets()
 		if err != nil {

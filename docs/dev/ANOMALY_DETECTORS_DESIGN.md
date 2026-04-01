@@ -302,22 +302,22 @@ Agent mode output wraps results in the standard envelope with context:
 
 ### Phase 2: Mutations
 
-5. `cmd/create_anomalydetector.go` — create from YAML (flattened + raw format) with safety check
-6. `cmd/edit_anomalydetector.go` — edit with $EDITOR, safety check
-7. `cmd/delete_anomalydetector.go` — delete with safety check
-8. `pkg/apply/` integration for idempotent apply (see apply detection heuristic below)
+1. `cmd/create_anomalydetector.go` — create from YAML (flattened + raw format) with safety check
+2. `cmd/edit_anomalydetector.go` — edit with $EDITOR, safety check
+3. `cmd/delete_anomalydetector.go` — delete with safety check
+4. `pkg/apply/` integration for idempotent apply (see apply detection heuristic below)
 
 ### Phase 3: Problems cross-reference
 
-9. `RecentProblems()` method using DQL query
-10. Integrate into describe output
-11. Integrate into agent mode context
+1. `RecentProblems()` method using DQL query
+2. Integrate into describe output
+3. Integrate into agent mode context
 
 ### Phase 4: Polish
 
-12. Name resolver for interactive title matching
-13. Command catalog and alias registration
-14. Update IMPLEMENTATION_STATUS.md, CHANGELOG.md
+1. Name resolver for interactive title matching
+2. Command catalog and alias registration
+3. Update IMPLEMENTATION_STATUS.md, CHANGELOG.md
 
 ---
 

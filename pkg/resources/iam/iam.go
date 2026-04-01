@@ -82,19 +82,18 @@ func (h *Handler) ListUsers(partialString string, uuids []string, chunkSize int6
 		var result UserListResponse
 		req := h.client.HTTP().R().SetResult(&result)
 
-		// The API rejects requests that combine page-size with page-key,
-		// but filter params must be sent on every request (page tokens may not preserve them).
-		if nextPageKey != "" {
-			req.SetQueryParam("page-key", nextPageKey)
-		} else if chunkSize > 0 {
-			req.SetQueryParam("page-size", fmt.Sprintf("%d", chunkSize))
-		}
-		if partialString != "" {
-			req.SetQueryParam("partialString", partialString)
-		}
+		uuidFilter := ""
 		if len(uuids) > 0 {
-			req.SetQueryParam("uuid", strings.Join(uuids, ","))
+			uuidFilter = strings.Join(uuids, ",")
 		}
+		client.PaginationParams{
+			Style:         client.PaginationDefault,
+			PageKeyParam:  "page-key",
+			PageSizeParam: "page-size",
+			NextPageKey:   nextPageKey,
+			PageSize:      chunkSize,
+			Filters:       map[string]string{"partialString": partialString, "uuid": uuidFilter},
+		}.Apply(req)
 
 		resp, err := req.Get(fmt.Sprintf("/platform/iam/v1/organizational-levels/environment/%s/users", envID))
 		if err != nil {
@@ -170,19 +169,18 @@ func (h *Handler) ListGroups(partialGroupName string, uuids []string, chunkSize 
 		var result GroupListResponse
 		req := h.client.HTTP().R().SetResult(&result)
 
-		// The API rejects requests that combine page-size with page-key,
-		// but filter params must be sent on every request (page tokens may not preserve them).
-		if nextPageKey != "" {
-			req.SetQueryParam("page-key", nextPageKey)
-		} else if chunkSize > 0 {
-			req.SetQueryParam("page-size", fmt.Sprintf("%d", chunkSize))
-		}
-		if partialGroupName != "" {
-			req.SetQueryParam("partialGroupName", partialGroupName)
-		}
+		uuidFilter := ""
 		if len(uuids) > 0 {
-			req.SetQueryParam("uuid", strings.Join(uuids, ","))
+			uuidFilter = strings.Join(uuids, ",")
 		}
+		client.PaginationParams{
+			Style:         client.PaginationDefault,
+			PageKeyParam:  "page-key",
+			PageSizeParam: "page-size",
+			NextPageKey:   nextPageKey,
+			PageSize:      chunkSize,
+			Filters:       map[string]string{"partialGroupName": partialGroupName, "uuid": uuidFilter},
+		}.Apply(req)
 
 		// Note: Groups are at the account level, but we use environment for now
 		// This might need adjustment based on the actual API requirements

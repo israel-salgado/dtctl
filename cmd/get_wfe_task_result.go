@@ -26,12 +26,7 @@ task (e.g. the object from a JavaScript task's default export function).`,
 
 		taskName, _ := cmd.Flags().GetString("task")
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -41,8 +36,6 @@ task (e.g. the object from a JavaScript task's default export function).`,
 		if err != nil {
 			return err
 		}
-
-		printer := NewPrinter()
 		ap := enrichAgent(printer, "get", "wfe-task-result")
 		if ap != nil {
 			ap.SetSuggestions([]string{

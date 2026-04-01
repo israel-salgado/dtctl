@@ -29,18 +29,12 @@ Examples:
   dtctl get buckets -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := bucket.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific bucket if name provided
 		if len(args) > 0 {
@@ -84,21 +78,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		bucketName := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		// Safety check - bucket deletion requires unrestricted level
-		checker, err := NewSafetyChecker(cfg)
-		if err != nil {
-			return err
-		}
-		if err := checker.CheckError(safety.OperationDeleteBucket, safety.OwnershipUnknown); err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupWithSafety(safety.OperationDeleteBucket)
 		if err != nil {
 			return err
 		}

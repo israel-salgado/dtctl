@@ -183,21 +183,14 @@ func (h *Handler) ListObjects(schemaID, scope string, chunkSize int64) (*Setting
 	for {
 		req := h.client.HTTP().R()
 
-		// The Settings API rejects ALL other params when nextPageKey is used
-		// (schemaIds, scopes, pageSize are all embedded in the page token).
-		if nextPageKey != "" {
-			req.SetQueryParam("nextPageKey", nextPageKey)
-		} else {
-			if chunkSize > 0 {
-				req.SetQueryParam("pageSize", fmt.Sprintf("%d", chunkSize))
-			}
-			if schemaID != "" {
-				req.SetQueryParam("schemaIds", schemaID)
-			}
-			if scope != "" {
-				req.SetQueryParam("scopes", scope)
-			}
-		}
+		client.PaginationParams{
+			Style:         client.PaginationSettingsAPI,
+			PageKeyParam:  "nextPageKey",
+			PageSizeParam: "pageSize",
+			NextPageKey:   nextPageKey,
+			PageSize:      chunkSize,
+			Filters:       map[string]string{"schemaIds": schemaID, "scopes": scope},
+		}.Apply(req)
 
 		resp, err := req.Get("/platform/classic/environment-api/v2/settings/objects")
 		if err != nil {
@@ -329,19 +322,14 @@ func (h *Handler) getByUID(uid, schemaID, scope string) (*SettingsObject, error)
 	for {
 		req := h.client.HTTP().R()
 
-		// The Settings API rejects ALL other params when nextPageKey is used
-		// (schemaIds, scopes, pageSize are all embedded in the page token).
-		if nextPageKey != "" {
-			req.SetQueryParam("nextPageKey", nextPageKey)
-		} else {
-			req.SetQueryParam("pageSize", fmt.Sprintf("%d", pageSize))
-			if schemaID != "" {
-				req.SetQueryParam("schemaIds", schemaID)
-			}
-			if searchScope != "" {
-				req.SetQueryParam("scopes", searchScope)
-			}
-		}
+		client.PaginationParams{
+			Style:         client.PaginationSettingsAPI,
+			PageKeyParam:  "nextPageKey",
+			PageSizeParam: "pageSize",
+			NextPageKey:   nextPageKey,
+			PageSize:      pageSize,
+			Filters:       map[string]string{"schemaIds": schemaID, "scopes": searchScope},
+		}.Apply(req)
 
 		resp, err := req.Get("/platform/classic/environment-api/v2/settings/objects")
 		if err != nil {

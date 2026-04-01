@@ -28,12 +28,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		path := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -54,7 +49,6 @@ Examples:
 
 		// For structured formats, use printer
 		if outputFormat != "table" {
-			printer := NewPrinter()
 			enrichAgent(printer, "describe", "lookup")
 			lookupData := struct {
 				*lookup.Lookup

@@ -152,12 +152,7 @@ func handleTwoFiles(differ *diff.Differ, file1, file2 string) (*diff.DiffResult,
 }
 
 func handleFileVsRemote(differ *diff.Differ, file string) (*diff.DiffResult, error) {
-	cfg, err := LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := NewClientFromConfig(cfg)
+	_, c, err := SetupClient()
 	if err != nil {
 		return nil, err
 	}
@@ -181,12 +176,7 @@ func handleFileVsRemote(differ *diff.Differ, file string) (*diff.DiffResult, err
 }
 
 func handleFileVsNamedResource(differ *diff.Differ, file, resourceType, resourceID string) (*diff.DiffResult, error) {
-	cfg, err := LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := NewClientFromConfig(cfg)
+	_, c, err := SetupClient()
 	if err != nil {
 		return nil, err
 	}
@@ -205,12 +195,7 @@ func handleFileVsNamedResource(differ *diff.Differ, file, resourceType, resource
 }
 
 func handleTwoRemoteResources(differ *diff.Differ, resourceType, id1, id2 string) (*diff.DiffResult, error) {
-	cfg, err := LoadConfig()
-	if err != nil {
-		return nil, err
-	}
-
-	c, err := NewClientFromConfig(cfg)
+	_, c, err := SetupClient()
 	if err != nil {
 		return nil, err
 	}

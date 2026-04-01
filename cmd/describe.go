@@ -131,11 +131,7 @@ var describeAzureConnectionCmd = &cobra.Command{
 	Short:   "Show details of an Azure connection (credential)",
 	Args:    cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -169,7 +165,6 @@ var describeAzureConnectionCmd = &cobra.Command{
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "azure-connection")
 		return printer.Print(item)
 	},
@@ -184,11 +179,7 @@ var describeAzureMonitoringConfigCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -235,7 +226,6 @@ var describeAzureMonitoringConfigCmd = &cobra.Command{
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "azure-monitoring")
 		return printer.Print(item)
 	},

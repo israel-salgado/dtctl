@@ -32,12 +32,7 @@ Examples:
 `,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -95,7 +90,6 @@ Examples:
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		return printer.Print(intent)
 	},
 }

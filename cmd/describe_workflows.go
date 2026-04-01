@@ -25,12 +25,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		workflowID := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -115,7 +110,6 @@ Examples:
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "workflow")
 		return printer.Print(wf)
 	},
@@ -137,12 +131,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		executionID := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -205,7 +194,6 @@ Examples:
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "workflow-execution")
 		return printer.Print(exec)
 	},

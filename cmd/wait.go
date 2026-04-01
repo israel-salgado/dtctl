@@ -130,12 +130,7 @@ Examples:
 		}
 
 		// Load config and create client
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

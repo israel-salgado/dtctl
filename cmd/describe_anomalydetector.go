@@ -34,12 +34,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		identifier := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -58,7 +53,6 @@ Examples:
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		ap := enrichAgent(printer, "describe", "anomaly-detector")
 		if ap != nil {
 			ap.Context().Suggestions = []string{
@@ -173,9 +167,8 @@ func printAnomalyDetectorRecentProblems(c *client.Client, ad *anomalydetector.An
 
 	// Build query — use prefix match if event name contains {dims:...} placeholders
 	var query string
-	if strings.Contains(eventName, "{dims:") || strings.Contains(eventName, "{") {
+	if idx := strings.Index(eventName, "{"); idx >= 0 {
 		// Extract static prefix before first placeholder
-		idx := strings.Index(eventName, "{")
 		prefix := eventName[:idx]
 		if prefix != "" {
 			query = fmt.Sprintf(`fetch dt.davis.problems, from:now()-7d

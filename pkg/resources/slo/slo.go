@@ -96,16 +96,14 @@ func (h *Handler) List(filter string, chunkSize int64) (*SLOList, error) {
 		var result SLOList
 		req := h.client.HTTP().R().SetResult(&result)
 
-		// The API rejects requests that combine page-size with page-key,
-		// but filter must be sent on every request (page tokens may not preserve it).
-		if nextPageKey != "" {
-			req.SetQueryParam("page-key", nextPageKey)
-		} else if chunkSize > 0 {
-			req.SetQueryParam("page-size", fmt.Sprintf("%d", chunkSize))
-		}
-		if filter != "" {
-			req.SetQueryParam("filter", filter)
-		}
+		client.PaginationParams{
+			Style:         client.PaginationDefault,
+			PageKeyParam:  "page-key",
+			PageSizeParam: "page-size",
+			NextPageKey:   nextPageKey,
+			PageSize:      chunkSize,
+			Filters:       map[string]string{"filter": filter},
+		}.Apply(req)
 
 		resp, err := req.Get("/platform/slo/v1/slos")
 		if err != nil {

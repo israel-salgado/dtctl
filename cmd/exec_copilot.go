@@ -37,12 +37,7 @@ Examples:
   dtctl exec copilot "List top errors" --instruction "Answer in bullet points"
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -126,12 +121,7 @@ Examples:
   dtctl exec copilot nl2dql "find hosts with high CPU" -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -189,12 +179,7 @@ Examples:
   dtctl exec copilot dql2nl "fetch logs | limit 10" -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
@@ -256,12 +241,7 @@ Examples:
   dtctl exec copilot document-search "kubernetes" --collections notebooks -o json
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, err := SetupClient()
 		if err != nil {
 			return err
 		}

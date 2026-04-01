@@ -27,12 +27,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		sloID := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
@@ -107,7 +102,6 @@ Examples:
 		}
 
 		// For other formats, use standard printer
-		printer := NewPrinter()
 		enrichAgent(printer, "describe", "slo")
 		return printer.Print(s)
 	},

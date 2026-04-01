@@ -32,18 +32,12 @@ Examples:
   dtctl get segments -o wide
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		_, c, printer, err := Setup()
 		if err != nil {
 			return err
 		}
 
 		handler := segment.NewHandler(c)
-		printer := NewPrinter()
 
 		// Get specific segment if UID provided
 		if len(args) > 0 {
@@ -85,12 +79,7 @@ Examples:
 	RunE: func(cmd *cobra.Command, args []string) error {
 		uid := args[0]
 
-		cfg, err := LoadConfig()
-		if err != nil {
-			return err
-		}
-
-		c, err := NewClientFromConfig(cfg)
+		cfg, c, err := SetupClient()
 		if err != nil {
 			return err
 		}
