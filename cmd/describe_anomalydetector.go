@@ -167,9 +167,8 @@ func printAnomalyDetectorRecentProblems(c *client.Client, ad *anomalydetector.An
 
 	// Build query — use prefix match if event name contains {dims:...} placeholders
 	var query string
-	if strings.Contains(eventName, "{dims:") || strings.Contains(eventName, "{") {
+	if idx := strings.Index(eventName, "{"); idx >= 0 {
 		// Extract static prefix before first placeholder
-		idx := strings.Index(eventName, "{")
 		prefix := eventName[:idx]
 		if prefix != "" {
 			query = fmt.Sprintf(`fetch dt.davis.problems, from:now()-7d

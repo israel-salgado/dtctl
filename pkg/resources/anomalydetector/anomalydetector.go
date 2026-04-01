@@ -120,8 +120,8 @@ func deriveAnalyzerShort(value map[string]any) string {
 
 	switch {
 	case strings.Contains(name, "StaticThreshold"):
-		condition, _ := input["alertCondition"]
-		threshold, _ := input["threshold"]
+		condition := input["alertCondition"]
+		threshold := input["threshold"]
 		op := ">"
 		if condition == "BELOW" {
 			op = "<"
