@@ -370,7 +370,7 @@ Examples:
 `,
 	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		_, c, err := SetupClient()
+		_, c, err := SetupWithSafety(safety.OperationUpdate)
 		if err != nil {
 			return err
 		}
