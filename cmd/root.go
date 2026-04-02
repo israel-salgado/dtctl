@@ -94,7 +94,9 @@ func Execute() {
 		// Check for auth-related hints (e.g., expired OAuth session)
 		authHints := getAuthHintsForError(err)
 
-		allHints := append(urlHints, authHints...)
+		allHints := make([]string, 0, len(urlHints)+len(authHints))
+		allHints = append(allHints, urlHints...)
+		allHints = append(allHints, authHints...)
 
 		if agentMode || plainMode {
 			detail := errorToDetail(err)

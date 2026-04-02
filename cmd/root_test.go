@@ -1112,10 +1112,8 @@ func TestGetAuthHintsForError(t *testing.T) {
 				if !found {
 					t.Errorf("expected hint to mention 'dtctl auth login', got %v", hints)
 				}
-			} else {
-				if len(hints) > 0 {
-					t.Errorf("expected no hints, got %v", hints)
-				}
+			} else if len(hints) > 0 {
+				t.Errorf("expected no hints, got %v", hints)
 			}
 		})
 	}

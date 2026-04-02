@@ -35,7 +35,7 @@ func TestRunPreApply_Timeout(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 100*time.Millisecond)
 	defer cancel()
 
-	_, err := RunPreApply(ctx, "sleep 999", "dashboard", "test.yaml", []byte(`{}`))
+	_, err := RunPreApply(ctx, "sleep 1", "dashboard", "test.yaml", []byte(`{}`))
 	if err == nil {
 		t.Fatal("expected error, got nil")
 	}

@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io"
 	"os/exec"
 	"time"
 )
@@ -15,6 +16,7 @@ const DefaultTimeout = 30 * time.Second
 type Result struct {
 	ExitCode int
 	Stderr   string
+	Duration time.Duration
 }
 
 // RunPreApply executes the pre-apply hook command.
@@ -47,11 +49,14 @@ func RunPreApply(ctx context.Context, command string, resourceType string, sourc
 	// resource content is always on stdin (processed JSON).
 	cmd := exec.CommandContext(ctx, "sh", "-c", command, "--", resourceType, sourceFile)
 	cmd.Stdin = bytes.NewReader(jsonData)
+	cmd.Stdout = io.Discard
 
 	var stderr bytes.Buffer
 	cmd.Stderr = &stderr
 
+	start := time.Now()
 	err := cmd.Run()
+	elapsed := time.Since(start)
 	if err != nil {
 		if ctx.Err() == context.DeadlineExceeded {
 			return nil, fmt.Errorf("pre-apply hook timed out after %s", DefaultTimeout)
@@ -60,10 +65,11 @@ func RunPreApply(ctx context.Context, command string, resourceType string, sourc
 			return &Result{
 				ExitCode: exitErr.ExitCode(),
 				Stderr:   stderr.String(),
+				Duration: elapsed,
 			}, nil
 		}
 		return nil, fmt.Errorf("pre-apply hook failed to execute: %w", err)
 	}
 
-	return &Result{ExitCode: 0, Stderr: stderr.String()}, nil
+	return &Result{ExitCode: 0, Stderr: stderr.String(), Duration: elapsed}, nil
 }
