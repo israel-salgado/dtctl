@@ -7,9 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.24.0] - 2026-04-14
+
 ### Added
+- **OpenTelemetry distributed tracing** — every dtctl invocation now creates an OpenTelemetry span covering the entire CLI process; export spans via OTLP by setting `OTEL_EXPORTER_OTLP_ENDPOINT`; inherits caller trace context from `TRACEPARENT`/`TRACESTATE` environment variables (W3C Trace Context), so dtctl appears as a child span in CI/CD pipelines or other distributed traces; outgoing HTTP requests to Dynatrace APIs carry `traceparent`/`tracestate` headers for end-to-end correlation; non-intrusive — tracing is silently disabled when no exporter is configured; see `docs/OBSERVABILITY.md` for setup guides and examples
+- **Hub catalog extensions** — browse the Dynatrace Hub extension catalog with `dtctl get hub-extensions`, `dtctl describe hub-extensions`, and `dtctl get hub-extension-releases`; client-side `--filter` flag for case-insensitive substring matching against name, ID, or description; all commands are read-only
 - **File-based OAuth token storage** — new `DTCTL_TOKEN_STORAGE=file` environment variable enables file-based OAuth token persistence as a fallback when the OS keyring is unavailable (headless Linux, WSL, CI/CD, containers); tokens are stored under `$XDG_DATA_HOME/dtctl/oauth-tokens/` with `0600` permissions; `dtctl doctor` reports the active storage backend; all OAuth flows (login, logout, token refresh, DQL queries) work transparently with either backend
-- **Hub catalog extensions** — browse the Dynatrace Hub extension catalog with `get hub-extensions`, `describe hub-extensions`, and `get hub-extension-releases`; client-side `--filter` flag for case-insensitive substring matching against name, ID, or description; all commands are read-only
+
+### Fixed
+- **`auth login --context` uses correct environment URL** — `dtctl auth login --context <name>` previously resolved the environment URL and token name from the *current* context instead of the named one, silently overwriting the target context's URL; now correctly reads from the specified context's configuration
+- **Helpful redirect for `update settings`** — users attempting `dtctl update settings` now receive a clear message directing them to use `dtctl apply -f <file>` instead of a confusing unknown-flag error
+
+### Documentation
+- **Observability guide** — new `docs/OBSERVABILITY.md` documenting distributed tracing setup, environment variables, CI/CD integration with GitHub Actions examples, and a behavior matrix for all configuration combinations
 
 ## [0.23.0] - 2026-04-10
 
@@ -355,6 +365,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated Go version to 1.24.13 in security workflow
 
+[0.24.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.23.0...v0.24.0
+[0.23.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.22.0...v0.23.0
 [0.22.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.21.0...v0.22.0
 [0.21.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.20.2...v0.21.0
 [0.20.2]: https://github.com/dynatrace-oss/dtctl/compare/v0.20.1...v0.20.2
