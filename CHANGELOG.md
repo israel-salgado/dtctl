@@ -7,6 +7,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+- **Windows uninstall script** — added `uninstall.ps1` to remove `%LOCALAPPDATA%\dtctl` and its User PATH entry, with optional full cleanup flags (`-RemoveConfig -RemoveCache -RemoveData`) for config/cache/data directories
+
 ### Fixed
 - **Windows installer 8.3 short-path fix** — resolved installation failures caused by Windows 8.3 short-name paths (e.g. `C:\Users\LONGUS~1\...`) in `%LOCALAPPDATA%` and `%TEMP%`; also improves robustness with try/catch on arch detection, non-fatal temp cleanup, and nested zip structure handling
 
