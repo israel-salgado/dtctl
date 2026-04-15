@@ -308,6 +308,19 @@ sudo cp bin/dtctl /usr/local/bin/
 
 To remove dtctl:
 
+### Windows (PowerShell)
+
+```powershell
+# Remove binary + PATH entry
+irm https://raw.githubusercontent.com/dynatrace-oss/dtctl/main/uninstall.ps1 | iex
+
+# Optional: full cleanup (config/cache/data)
+irm https://raw.githubusercontent.com/dynatrace-oss/dtctl/main/uninstall.ps1 -OutFile uninstall-dtctl.ps1
+.\uninstall-dtctl.ps1 -RemoveConfig -RemoveCache -RemoveData
+```
+
+### macOS/Linux
+
 ```bash
 # If installed via Homebrew
 brew uninstall dtctl
