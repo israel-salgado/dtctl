@@ -384,6 +384,7 @@ func TestListEnvironmentShares_FiltersByDocumentID(t *testing.T) {
 
 func TestEnsureEnvironmentShare_AlreadyExists_NoOp(t *testing.T) {
 	createCalls := 0
+	patchCalls := 0
 	mux := http.NewServeMux()
 	mux.HandleFunc("/platform/document/v1/environment-shares", func(w http.ResponseWriter, r *http.Request) {
 		if r.Method == http.MethodGet {
@@ -399,6 +400,17 @@ func TestEnsureEnvironmentShare_AlreadyExists_NoOp(t *testing.T) {
 			w.WriteHeader(http.StatusCreated)
 		}
 	})
+	// EnsureEnvironmentShare also flips isPrivate=false; mock metadata + PATCH.
+	mux.HandleFunc("/platform/document/v1/documents/doc-1/metadata", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(DocumentMetadata{ID: "doc-1", Name: "doc", Type: "notebook", Version: 3, IsPrivate: true})
+	})
+	mux.HandleFunc("/platform/document/v1/documents/doc-1", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			patchCalls++
+			w.WriteHeader(http.StatusOK)
+		}
+	})
 	h, cleanup := newDocTestHandler(t, mux)
 	defer cleanup()
 
@@ -411,6 +423,9 @@ func TestEnsureEnvironmentShare_AlreadyExists_NoOp(t *testing.T) {
 	}
 	if createCalls != 0 {
 		t.Errorf("expected no create calls, got %d", createCalls)
+	}
+	if patchCalls != 1 {
+		t.Errorf("expected exactly 1 isPrivate PATCH, got %d", patchCalls)
 	}
 }
 
@@ -426,6 +441,15 @@ func TestEnsureEnvironmentShare_CreatesWhenAbsent(t *testing.T) {
 		if r.Method == http.MethodPost {
 			postCalls++
 			json.NewEncoder(w).Encode(EnvironmentShare{ID: "s-new", DocumentID: "doc-1", Access: []string{"read"}})
+		}
+	})
+	mux.HandleFunc("/platform/document/v1/documents/doc-1/metadata", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(DocumentMetadata{ID: "doc-1", Name: "doc", Type: "notebook", Version: 1, IsPrivate: true})
+	})
+	mux.HandleFunc("/platform/document/v1/documents/doc-1", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			w.WriteHeader(http.StatusOK)
 		}
 	})
 	h, cleanup := newDocTestHandler(t, mux)
@@ -465,6 +489,15 @@ func TestEnsureEnvironmentShare_ReplacesDifferentAccess(t *testing.T) {
 		if r.Method == http.MethodDelete {
 			deletedID = "s-old"
 			w.WriteHeader(http.StatusNoContent)
+		}
+	})
+	mux.HandleFunc("/platform/document/v1/documents/doc-1/metadata", func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		json.NewEncoder(w).Encode(DocumentMetadata{ID: "doc-1", Name: "doc", Type: "notebook", Version: 1, IsPrivate: true})
+	})
+	mux.HandleFunc("/platform/document/v1/documents/doc-1", func(w http.ResponseWriter, r *http.Request) {
+		if r.Method == http.MethodPatch {
+			w.WriteHeader(http.StatusOK)
 		}
 	})
 	h, cleanup := newDocTestHandler(t, mux)
