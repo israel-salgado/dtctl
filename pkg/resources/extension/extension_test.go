@@ -1208,7 +1208,15 @@ func TestInstallFromHub(t *testing.T) {
 			version:       "1.0.0",
 			installCode:   409,
 			expectError:   true,
-			errorContains: "already installed",
+			errorContains: `version "1.0.0" is already installed`,
+		},
+		{
+			name:          "already installed (latest, no version specified)",
+			extensionName: "com.dynatrace.extension.host-monitoring",
+			version:       "",
+			installCode:   409,
+			expectError:   true,
+			errorContains: "(latest version) is already installed",
 		},
 		{
 			name:          "extension name with special characters is URL-encoded",

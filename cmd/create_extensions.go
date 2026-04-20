@@ -54,6 +54,9 @@ Examples:
 		if file != "" && hubExtension != "" {
 			return fmt.Errorf("--file and --hub-extension are mutually exclusive")
 		}
+		if file != "" && version != "" {
+			return fmt.Errorf("--version only applies to --hub-extension")
+		}
 
 		if file != "" {
 			return runUploadExtension(file)
