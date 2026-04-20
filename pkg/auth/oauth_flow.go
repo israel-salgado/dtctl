@@ -75,6 +75,7 @@ func GetScopesForSafetyLevel(level config.SafetyLevel) []string {
 	case config.SafetyLevelReadOnly:
 		return []string{
 			"openid",
+			"offline_access",
 			"document:documents:read",
 			"document:direct-shares:read",
 			"document:trash.documents:read",
@@ -114,6 +115,7 @@ func GetScopesForSafetyLevel(level config.SafetyLevel) []string {
 	case config.SafetyLevelReadWriteMine:
 		return []string{
 			"openid",
+			"offline_access",
 			"document:documents:read",
 			"document:documents:write",
 			"document:direct-shares:read",
@@ -164,6 +166,7 @@ func GetScopesForSafetyLevel(level config.SafetyLevel) []string {
 	case config.SafetyLevelReadWriteAll:
 		return []string{
 			"openid",
+			"offline_access",
 			"document:documents:read",
 			"document:documents:write",
 			"document:direct-shares:read",
@@ -232,6 +235,7 @@ func GetScopesForSafetyLevel(level config.SafetyLevel) []string {
 	case config.SafetyLevelDangerouslyUnrestricted:
 		return []string{
 			"openid",
+			"offline_access",
 			"document:documents:read",
 			"document:documents:write",
 			"document:documents:delete",
