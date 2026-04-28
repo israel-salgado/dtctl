@@ -58,7 +58,7 @@ Examples:
 			}
 			output.PrintInfo("Dry run: would resolve GCP monitoring config %q", name)
 			if enableGCPMonitoringServiceAccountID != "" {
-				output.PrintInfo("Dry run: would update linked GCP connection with service account %q", enableGCPMonitoringServiceAccountID)
+				output.PrintInfo("Dry run: would validate service account %q against linked GCP connection and populate empty credential field", enableGCPMonitoringServiceAccountID)
 			}
 			output.PrintInfo("Dry run: would enable monitoring config and all credentials")
 			return nil
@@ -118,7 +118,7 @@ Examples:
 				connSA = conn.Value.ServiceAccountImpersonation.ServiceAccountID
 			}
 
-			if enableGCPMonitoringServiceAccountID != connSA {
+			if connSA != "" && enableGCPMonitoringServiceAccountID != connSA {
 				return fmt.Errorf(
 					"serviceAccountId %q does not match the service account on linked connection %q (%q)\n"+
 						"Update the connection first with: dtctl update gcp connection --name %q --serviceAccountId %q",
@@ -134,10 +134,10 @@ Examples:
 		value.Enabled = true
 		for i := range value.GoogleCloud.Credentials {
 			value.GoogleCloud.Credentials[i].Enabled = true
-			// Populate serviceAccount if it was empty and --serviceAccountId was provided
-			if enableGCPMonitoringServiceAccountID != "" && value.GoogleCloud.Credentials[i].ServiceAccount == "" {
-				value.GoogleCloud.Credentials[i].ServiceAccount = enableGCPMonitoringServiceAccountID
-			}
+		}
+		// Populate serviceAccount only on the first credential — the only one validated above
+		if enableGCPMonitoringServiceAccountID != "" && len(value.GoogleCloud.Credentials) > 0 && value.GoogleCloud.Credentials[0].ServiceAccount == "" {
+			value.GoogleCloud.Credentials[0].ServiceAccount = enableGCPMonitoringServiceAccountID
 		}
 
 		payload := gcpmonitoringconfig.GCPMonitoringConfig{Scope: existing.Scope, Value: value}
