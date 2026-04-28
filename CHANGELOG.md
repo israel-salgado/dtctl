@@ -7,14 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
-### Fixed
-- **Eight `--watch` mode correctness bugs** — `--watch-only` no longer floods output with false `ADDED` events on the first poll (differ baseline was never seeded); `Watcher.Stop()` no longer panics on a second call (guarded with `sync.Once`); Ctrl+C no longer hangs for seconds during rate-limit or network-error backoff (`time.Sleep` replaced with a context-aware helper); `Retry-After` headers on HTTP 429 responses are now parsed and honoured instead of always being ignored (stub replaced with a real parser, capped at 5 min); `--interval` values below 1 s are now correctly clamped to 1 s instead of 2 s; `--watch`/`--watch-only` flags no longer appear in `--help` for commands that never call `executeWithWatch` (`buckets`, `slos`, `notifications`, `workflow-executions`, `extensions`, `segments`); transient errors (timeout, temporary failure, connection reset) now back off for one interval before retrying instead of hammering the endpoint immediately; resources keyed by `objectId`/`entityId` (no `id`/`name` field) now participate in change detection via a stable content hash instead of being silently dropped every poll; fixes [#189](https://github.com/dynatrace-oss/dtctl/issues/189)
+## [0.26.0] - 2026-04-28
 
 ### Added
+- **DQL query cancellation on Ctrl+C** — interrupting `dtctl query` while a query is polling now explicitly cancels the running Grail query via `POST /query:cancel` (best-effort, 3 s timeout) before exiting, preventing orphaned server-side jobs; Ctrl+C in `--live` mode now exits immediately instead of waiting for the current fetch to complete; spurious resty WARN/ERROR log output on context cancellation is also suppressed; fixes [#188](https://github.com/dynatrace-oss/dtctl/issues/188)
+- **`app-settings:objects:read` OAuth scope** — added to all safety levels so that app functions that access app-settings APIs can be invoked without a 403; fixes [#171](https://github.com/dynatrace-oss/dtctl/issues/171)
 - **`iam:service-users:use` OAuth scope** — added to the `readwrite-mine`, `readwrite-all`, and `dangerously-unrestricted` safety levels so `dtctl create workflow` can use a Dynatrace [service user as the workflow actor](https://docs.dynatrace.com/docs/analyze-explore-automate/workflows/security#service-users); existing sessions need to re-run `dtctl auth login` to pick up the new scope; note that this slightly broadens the privilege footprint of `readwrite-mine` since holders can now act as a service user when creating workflows
 
 ### Fixed
+- **Eight `--watch` mode correctness bugs** — `--watch-only` no longer floods output with false `ADDED` events on the first poll (differ baseline was never seeded); `Watcher.Stop()` no longer panics on a second call (guarded with `sync.Once`); Ctrl+C no longer hangs for seconds during rate-limit or network-error backoff (`time.Sleep` replaced with a context-aware helper); `Retry-After` headers on HTTP 429 responses are now parsed and honoured instead of always being ignored (stub replaced with a real parser, capped at 5 min); `--interval` values below 1 s are now correctly clamped to 1 s instead of 2 s; `--watch`/`--watch-only` flags no longer appear in `--help` for commands that never call `executeWithWatch` (`buckets`, `slos`, `notifications`, `workflow-executions`, `extensions`, `segments`); transient errors (timeout, temporary failure, connection reset) now back off for one interval before retrying instead of hammering the endpoint immediately; resources keyed by `objectId`/`entityId` (no `id`/`name` field) now participate in change detection via a stable content hash instead of being silently dropped every poll; fixes [#189](https://github.com/dynatrace-oss/dtctl/issues/189)
 - **`create lookup` now handles CSV files with a UTF-8 BOM** — Excel on macOS/Windows and many editors prepend a byte order mark (`EF BB BF`) when saving as CSV; the BOM was previously embedded in the first column name during parse-pattern auto-detection, producing a DPL pattern the upload API rejected with `Syntax error: extraneous input ''`; the BOM is now stripped before the header is parsed; fixes [#187](https://github.com/dynatrace-oss/dtctl/issues/187)
+
+## [0.25.2] - 2026-04-22
+
+### Fixed
+- **ANSI/VT escape sequence processing on Windows** — `dtctl` output now renders colours and progress indicators correctly in Windows Terminal, PowerShell, and cmd.exe; previously the VT processing flag was only set on stdout, leaving stderr unstyled; fixes [#183](https://github.com/dynatrace-oss/dtctl/issues/183)
+
+### Documentation
+- Updated token scopes documentation URL
 
 ## [0.25.1] - 2026-04-21
 
@@ -403,6 +413,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Updated Go version to 1.24.13 in security workflow
 
+[0.26.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.25.2...v0.26.0
+[0.25.2]: https://github.com/dynatrace-oss/dtctl/compare/v0.25.1...v0.25.2
 [0.25.1]: https://github.com/dynatrace-oss/dtctl/compare/v0.25.0...v0.25.1
 [0.25.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.24.0...v0.25.0
 [0.24.0]: https://github.com/dynatrace-oss/dtctl/compare/v0.23.0...v0.24.0
