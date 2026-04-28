@@ -63,6 +63,7 @@ func (p *LivePrinter) RunLive(ctx context.Context, fetcher DataFetcher) error {
 
 	sigCh := make(chan os.Signal, 1)
 	signal.Notify(sigCh, os.Interrupt, syscall.SIGTERM)
+	defer signal.Stop(sigCh)
 
 	// Set up resize signal handling for fullscreen mode (Unix only)
 	p.setupResizeSignal()
@@ -83,8 +84,20 @@ func (p *LivePrinter) RunLive(ctx context.Context, fetcher DataFetcher) error {
 					if err != nil || n == 0 {
 						return
 					}
+					key := rune(buf[0])
+					// For quit keys, cancel the context immediately so that any
+					// in-progress fetchAndPrint (which may be blocked on HTTP I/O)
+					// is interrupted without waiting for the select loop to unblock.
+					if key == 'q' || key == 'Q' || key == '\x03' {
+						cancel()
+						select {
+						case keyCh <- key:
+						default:
+						}
+						return
+					}
 					select {
-					case keyCh <- rune(buf[0]):
+					case keyCh <- key:
 					case <-ctx.Done():
 						return
 					}
@@ -114,7 +127,7 @@ func (p *LivePrinter) RunLive(ctx context.Context, fetcher DataFetcher) error {
 			return nil
 		case key := <-keyCh:
 			// Handle 'q' or 'Q' to quit
-			if key == 'q' || key == 'Q' {
+			if key == 'q' || key == 'Q' || key == '\x03' { // 'q', 'Q', or Ctrl+C (raw mode intercepts the byte before OS delivers SIGINT)
 				_, _ = fmt.Fprintln(p.writer, "\nLive mode stopped.")
 				return nil
 			}
@@ -149,6 +162,9 @@ func (p *LivePrinter) fetchAndPrint(ctx context.Context, fetcher DataFetcher) er
 	data, err := fetcher(ctx)
 	if err != nil {
 		return err
+	}
+	if data == nil {
+		return nil // context cancelled; nothing to display
 	}
 
 	// Clear screen and move cursor to top-left

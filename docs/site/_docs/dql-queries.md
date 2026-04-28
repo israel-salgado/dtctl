@@ -215,6 +215,10 @@ dtctl query "fetch logs | filter loglevel == 'ERROR' | sort timestamp desc | lim
 
 Press `Ctrl+C` to stop live mode.
 
+## Cancelling Queries
+
+Press `Ctrl+C` (or send `SIGTERM`) at any time to cancel a running query. `dtctl` sends a best-effort `query:cancel` request to Grail so the backend stops executing the query, then exits. A confirmation (`Query cancelled.`) or, if the cancel request fails, a `Failed to cancel query` message is written to **stderr**.
+
 ## Query Warnings
 
 DQL may emit warnings (e.g., result truncation, deprecated syntax). These are printed to **stderr** so they don't interfere with piped output:
