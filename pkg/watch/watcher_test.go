@@ -112,14 +112,14 @@ func TestWatcher_ContextCancellation(t *testing.T) {
 // recordingPrinter captures Print/PrintList/PrintChanges calls so tests can
 // assert on what watch mode actually emits.
 type recordingPrinter struct {
-	listCalls    int
-	printCalls   int
-	changeCalls  int
-	lastChanges  []Change
+	listCalls   int
+	printCalls  int
+	changeCalls int
+	lastChanges []Change
 }
 
-func (p *recordingPrinter) Print(_ interface{}) error      { p.printCalls++; return nil }
-func (p *recordingPrinter) PrintList(_ interface{}) error  { p.listCalls++; return nil }
+func (p *recordingPrinter) Print(_ interface{}) error     { p.printCalls++; return nil }
+func (p *recordingPrinter) PrintList(_ interface{}) error { p.listCalls++; return nil }
 func (p *recordingPrinter) PrintChanges(c []Change) error {
 	p.changeCalls++
 	p.lastChanges = append([]Change(nil), c...)
