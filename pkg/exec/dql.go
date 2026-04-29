@@ -8,8 +8,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/dynatrace-oss/dtctl/pkg/aidetect"
 	"github.com/dynatrace-oss/dtctl/pkg/client"
 	"github.com/dynatrace-oss/dtctl/pkg/output"
+	"github.com/dynatrace-oss/dtctl/pkg/version"
 )
 
 // DQLExecutor handles DQL query execution
@@ -30,6 +32,23 @@ func NewDQLExecutor(c *client.Client) *DQLExecutor {
 func (e *DQLExecutor) WithTokenRefresher(refresher func() (string, error)) *DQLExecutor {
 	e.tokenRefresher = refresher
 	return e
+}
+
+// dtClientContextHeader builds the JSON value for the dt-client-context HTTP header.
+// callerContext is the optional caller-supplied semantic string (empty = omit field).
+func dtClientContextHeader(callerContext string) string {
+	type payload struct {
+		App     string `json:"app"`
+		Version string `json:"version"`
+		Agent   string `json:"agent,omitempty"`
+		Context string `json:"context,omitempty"`
+	}
+	p := payload{App: "dtctl", Version: version.Version, Context: callerContext}
+	if info := aidetect.Detect(); info.Detected {
+		p.Agent = info.Name
+	}
+	b, _ := json.Marshal(p)
+	return string(b)
 }
 
 // pollRequestTimeoutMs is the server-side hold time per poll HTTP round trip in milliseconds.
@@ -96,6 +115,10 @@ type DQLExecuteOptions struct {
 
 	// Segment options
 	Segments []FilterSegmentRef // Filter segments to apply to the query
+
+	// ClientContext is an optional caller-supplied semantic string included as the "context"
+	// field in the dt-client-context request header (e.g. "root-cause-analysis").
+	ClientContext string
 }
 
 // DQLVerifyOptions configures DQL query verification
@@ -103,6 +126,7 @@ type DQLVerifyOptions struct {
 	GenerateCanonicalQuery bool   // Generate a canonical (normalized) version of the query
 	Timezone               string // Query timezone (e.g., "UTC", "Europe/Paris")
 	Locale                 string // Query locale (e.g., "en_US")
+	ClientContext          string // Optional caller-supplied semantic string for the dt-client-context header
 }
 
 // DQLQueryRequest represents a DQL query request
@@ -334,6 +358,7 @@ func (e *DQLExecutor) ExecuteQueryWithContext(ctx context.Context, query string,
 	httpReq := e.client.HTTP().R().
 		SetContext(execCtx).
 		SetHeader("Content-Type", "application/json").
+		SetHeader("dt-client-context", dtClientContextHeader(opts.ClientContext)).
 		SetBody(req).
 		SetResult(&result)
 
@@ -347,7 +372,7 @@ func (e *DQLExecutor) ExecuteQueryWithContext(ctx context.Context, query string,
 	// (e.g. SIGINT), cancel the backend query now that we have the token.
 	if ctx.Err() != nil {
 		if result.RequestToken != "" {
-			e.CancelQuery(result.RequestToken)
+			e.cancelQuery(result.RequestToken, dtClientContextHeader(opts.ClientContext))
 		} else {
 			fmt.Fprintln(os.Stderr, "\nQuery cancelled.")
 		}
@@ -369,7 +394,7 @@ func (e *DQLExecutor) ExecuteQueryWithContext(ctx context.Context, query string,
 			// cancel to the backend. The internal poll deadline (pollCtx) is treated
 			// as a normal error so the caller sees the timeout.
 			if ctx.Err() != nil {
-				e.CancelQuery(result.RequestToken)
+				e.cancelQuery(result.RequestToken, dtClientContextHeader(opts.ClientContext))
 				return nil, nil
 			}
 			return nil, pollErr
@@ -457,6 +482,7 @@ func (e *DQLExecutor) VerifyQuery(query string, opts DQLVerifyOptions) (*DQLVeri
 	httpReq := e.client.HTTP().R().
 		SetContext(ctx).
 		SetHeader("Content-Type", "application/json").
+		SetHeader("dt-client-context", dtClientContextHeader(opts.ClientContext)).
 		SetBody(req).
 		SetResult(&result)
 
@@ -728,6 +754,7 @@ func (e *DQLExecutor) pollForResultsWithContext(ctx context.Context, requestToke
 		result = DQLQueryResponse{}
 		httpReq := e.client.HTTP().R().
 			SetContext(ctx).
+			SetHeader("dt-client-context", dtClientContextHeader(opts.ClientContext)).
 			SetQueryParam("request-token", requestToken).
 			SetQueryParam("request-timeout-milliseconds", fmt.Sprintf("%d", pollRequestTimeoutMs)).
 			SetResult(&result)
@@ -782,6 +809,13 @@ func (e *DQLExecutor) pollForResultsWithContext(ctx context.Context, requestToke
 // It uses a fresh context so the HTTP call can complete even if the parent context is cancelled.
 // Errors are written to stderr but not returned — cancellation is best-effort.
 func (e *DQLExecutor) CancelQuery(requestToken string) {
+	e.cancelQuery(requestToken, dtClientContextHeader(""))
+}
+
+// cancelQuery is the internal implementation of CancelQuery that accepts a pre-built
+// dt-client-context header value so the full caller context can be threaded through
+// from ExecuteQueryWithContext.
+func (e *DQLExecutor) cancelQuery(requestToken, clientContextHeader string) {
 	if requestToken == "" {
 		return
 	}
@@ -790,6 +824,7 @@ func (e *DQLExecutor) CancelQuery(requestToken string) {
 
 	resp, err := e.client.HTTP().R().
 		SetContext(ctx).
+		SetHeader("dt-client-context", clientContextHeader).
 		SetQueryParam("request-token", requestToken).
 		Post("/platform/storage/query/v1/query:cancel")
 
