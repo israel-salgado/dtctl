@@ -1538,3 +1538,138 @@ func TestHooks_YAMLRoundTrip_EmptyHooks(t *testing.T) {
 		t.Errorf("GetPreApplyHook() = %q, want empty (no hooks configured)", got)
 	}
 }
+
+func TestGetPostApplyHook_ContextOverridesGlobal(t *testing.T) {
+	cfg := &Config{
+		Preferences: Preferences{
+			Hooks: Hooks{PostApply: "global-post"},
+		},
+		CurrentContext: "prod",
+		Contexts: []NamedContext{{
+			Name: "prod",
+			Context: Context{
+				Environment: "https://prod.example.invalid",
+				TokenRef:    "prod-token",
+				Hooks:       Hooks{PostApply: "prod-post"},
+			},
+		}},
+	}
+	if got := cfg.GetPostApplyHook(); got != "prod-post" {
+		t.Errorf("GetPostApplyHook() = %q, want %q", got, "prod-post")
+	}
+}
+
+func TestGetPostApplyHook_FallsBackToGlobal(t *testing.T) {
+	cfg := &Config{
+		Preferences: Preferences{
+			Hooks: Hooks{PostApply: "global-post"},
+		},
+		CurrentContext: "dev",
+		Contexts: []NamedContext{{
+			Name: "dev",
+			Context: Context{
+				Environment: "https://dev.example.invalid",
+				TokenRef:    "dev-token",
+			},
+		}},
+	}
+	if got := cfg.GetPostApplyHook(); got != "global-post" {
+		t.Errorf("GetPostApplyHook() = %q, want %q", got, "global-post")
+	}
+}
+
+func TestGetPostApplyHook_NoneDisablesGlobal(t *testing.T) {
+	cfg := &Config{
+		Preferences: Preferences{
+			Hooks: Hooks{PostApply: "global-post"},
+		},
+		CurrentContext: "dev",
+		Contexts: []NamedContext{{
+			Name: "dev",
+			Context: Context{
+				Environment: "https://dev.example.invalid",
+				TokenRef:    "dev-token",
+				Hooks:       Hooks{PostApply: "none"},
+			},
+		}},
+	}
+	if got := cfg.GetPostApplyHook(); got != "" {
+		t.Errorf("GetPostApplyHook() = %q, want empty (none should disable)", got)
+	}
+}
+
+func TestGetPostApplyHook_NoHookConfigured(t *testing.T) {
+	cfg := &Config{
+		CurrentContext: "dev",
+		Contexts: []NamedContext{{
+			Name: "dev",
+			Context: Context{
+				Environment: "https://dev.example.invalid",
+				TokenRef:    "dev-token",
+			},
+		}},
+	}
+	if got := cfg.GetPostApplyHook(); got != "" {
+		t.Errorf("GetPostApplyHook() = %q, want empty", got)
+	}
+}
+
+func TestExpandEnvPreservingShellParams(t *testing.T) {
+	t.Setenv("DTCTL_TEST_FOO", "expanded-foo")
+	t.Setenv("DTCTL_TEST_BAR", "expanded-bar")
+
+	tests := []struct {
+		name string
+		in   string
+		want string
+	}{
+		{
+			name: "real env var ${VAR} is expanded",
+			in:   "${DTCTL_TEST_FOO}/x",
+			want: "expanded-foo/x",
+		},
+		{
+			name: "real env var bare $VAR is expanded",
+			in:   "$DTCTL_TEST_FOO/x",
+			want: "expanded-foo/x",
+		},
+		{
+			name: "shell positional $1 is preserved verbatim",
+			in:   `bash validate.sh "$1" "$2"`,
+			want: `bash validate.sh "$1" "$2"`,
+		},
+		{
+			name: "two-digit positional ${10} is preserved",
+			in:   `echo "${10}"`,
+			want: `echo "${10}"`,
+		},
+		{
+			name: "shell special $@ is preserved",
+			in:   `forward "$@"`,
+			want: `forward "$@"`,
+		},
+		{
+			name: "shell special $? $$ $! are preserved",
+			in:   `echo $? $$ $!`,
+			want: `echo $? $$ $!`,
+		},
+		{
+			name: "unset env var falls back to empty (matches os.ExpandEnv)",
+			in:   "prefix-${DTCTL_TEST_DEFINITELY_UNSET_XYZ}-suffix",
+			want: "prefix--suffix",
+		},
+		{
+			name: "mixed real env + positional in same string",
+			in:   `${DTCTL_TEST_FOO}/run.sh "$1" --bar="${DTCTL_TEST_BAR}"`,
+			want: `expanded-foo/run.sh "$1" --bar="expanded-bar"`,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			if got := expandEnvPreservingShellParams(tt.in); got != tt.want {
+				t.Errorf("expandEnvPreservingShellParams(%q) = %q, want %q", tt.in, got, tt.want)
+			}
+		})
+	}
+}
