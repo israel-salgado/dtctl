@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+## [0.26.2] - 2026-04-29
+
+### Added
+- **`--client-context` flag for `query` and `verify query`** — passes a caller-supplied semantic string (e.g. `"root-cause-analysis"`, `"incident-response"`) to the Dynatrace backend via the new `dt-client-context` request header on all DQL query API calls (`query:execute`, `query:poll`, `query:cancel`, `query:verify`); the header also carries the dtctl version and, when dtctl is running under a known AI agent (Claude Code, Cursor, GitHub Copilot, etc.), the agent name — giving the Dynatrace backend structured, attributable context about who is issuing queries and why; fixes [#195](https://github.com/dynatrace-oss/dtctl/pull/195)
+
 ## [0.26.1] - 2026-04-28
 
 ### Fixed
