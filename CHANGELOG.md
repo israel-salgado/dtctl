@@ -10,6 +10,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 - **`dtctl doctor` no longer fails on platform tokens** — the authentication check called `/platform/metadata/v1/user`, which requires the `iam:users:read` scope; platform tokens (`dt0s16.*`) cannot currently be granted that scope, so the call always returned `403 Forbidden` and `doctor` reported `[FAIL] Authentication API call failed: failed to fetch user info: 403 Forbidden`; the check now detects platform tokens via `client.IsPlatformToken` and surfaces this as a `warn` with an explanation (`platform token: user identity unavailable via metadata API`) instead of failing the run; OAuth/JWT tokens keep the existing metadata-API + JWT-fallback behaviour; fixes [#190](https://github.com/dynatrace-oss/dtctl/issues/190)
 
+### Documentation
+- **Install verification + headless-auth guidance** — README now shows a `dtctl version` verify step after the install snippets; [INSTALLATION.md](docs/INSTALLATION.md) and [QUICK_START.md](docs/QUICK_START.md) (and their site mirrors) call out that OAuth login requires both a browser and an OS keyring, and direct users in Codespaces, CI, remote SSH, or container environments to switch to token-based auth when `keyring probe failed`, `dbus-launch not found`, or `failed to unlock correct collection` errors appear
+
 ## [0.26.2] - 2026-04-29
 
 ### Added
@@ -38,6 +41,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Documentation
 - Updated token scopes documentation URL
+=======
+### Documentation
+- **Install verification + headless-auth guidance** — README now shows a `dtctl version` verify step after the install snippets; [INSTALLATION.md](docs/INSTALLATION.md) and [QUICK_START.md](docs/QUICK_START.md) (and their site mirrors) call out that OAuth login requires both a browser and an OS keyring, and direct users in Codespaces, CI, remote SSH, or container environments to switch to token-based auth when `keyring probe failed`, `dbus-launch not found`, or `failed to unlock correct collection` errors appear
+>>>>>>> 8763d52 (docs: add headless-environment auth guidance and install verify step)
 
 ## [0.25.1] - 2026-04-21
 

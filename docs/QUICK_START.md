@@ -57,6 +57,8 @@ To log out:
 dtctl auth logout
 ```
 
+> **Headless environments (Codespaces, CI, remote SSH, containers without a keyring):** OAuth login requires both a browser and an OS keyring. If `dtctl auth login` reports errors like `keyring probe failed`, `dbus-launch not found`, `failed to unlock correct collection`, or your shell has no way to open a browser, skip OAuth and use **Option 2: Token-based Authentication** below. `dtctl doctor` will also flag a missing/broken keyring under its **Keyring** check.
+
 #### Option 2: Token-based Authentication
 
 If you prefer API tokens (e.g. for CI/CD or headless environments):

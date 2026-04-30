@@ -51,6 +51,8 @@ This downloads the latest release, extracts it to `%LOCALAPPDATA%\dtctl`, and ad
 
 For detailed steps, manual install, PowerShell tips, quoting, and troubleshooting, see the dedicated [Windows installation guide](WINDOWS.md).
 
+> **Headless environments (Codespaces, CI, remote SSH, containers without a keyring):** the OAuth flow described in the [Quick Start](QUICK_START.md#option-1-oauth-login-recommended) needs both a browser and an OS keyring. If neither is available, use **token-based authentication** instead — see [Quick Start, Option 2](QUICK_START.md#option-2-token-based-authentication).
+
 ## Binary Download
 
 **For most users**, download the pre-built binary for your platform:

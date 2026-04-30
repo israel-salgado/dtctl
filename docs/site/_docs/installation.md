@@ -35,6 +35,16 @@ This downloads the latest release, extracts it to `%LOCALAPPDATA%\dtctl`, and ad
 
 **Manual install:** Download the zip for your architecture from the [releases page](https://github.com/dynatrace-oss/dtctl/releases/latest), extract it, and add the directory to your PATH. See the [Windows guide](https://github.com/dynatrace-oss/dtctl/blob/main/docs/WINDOWS.md) for detailed steps, PowerShell tips, and troubleshooting.
 
+## Verify
+
+On any platform:
+
+```bash
+dtctl version
+```
+
+> **Headless environments (Codespaces, CI, remote SSH, containers without a keyring):** the OAuth flow in the [Quick Start]({{ '/docs/quick-start/' | relative_url }}) needs both a browser and an OS keyring. If neither is available, use token-based authentication instead.
+
 ## Binary Download (Manual)
 
 Download a pre-built binary from the [GitHub releases page](https://github.com/dynatrace-oss/dtctl/releases/latest).

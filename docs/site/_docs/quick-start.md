@@ -17,6 +17,8 @@ dtctl auth login --context my-env --environment "https://abc12345.apps.dynatrace
 
 This opens your browser for login. Tokens are stored securely and refreshed automatically.
 
+> **Headless environments (Codespaces, CI, remote SSH, containers without a keyring):** OAuth needs both a browser and an OS keyring. If `dtctl auth login` reports `keyring probe failed`, `dbus-launch not found`, or `failed to unlock correct collection`, use **Token-Based Auth** below.
+
 ### Token-Based Auth (CI/CD)
 
 For headless environments, use a platform API token:
