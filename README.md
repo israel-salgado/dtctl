@@ -43,19 +43,58 @@ curl -fsSL https://raw.githubusercontent.com/dynatrace-oss/dtctl/main/install.sh
 irm https://raw.githubusercontent.com/dynatrace-oss/dtctl/main/install.ps1 | iex
 ```
 
+Verify the install on any platform:
+
+```bash
+dtctl version
+```
+
 Binary downloads, building from source, shell completion setup, and more in the **[Installation Guide](https://dynatrace-oss.github.io/dtctl/docs/installation/)**.
 
 ## Authenticate
 
+You'll need your **tenant ID** — the subdomain of your Dynatrace environment URL. Open Dynatrace in your browser; the part before the first `.` in the address bar is your tenant ID.
+
+![Dynatrace browser URL with the tenant ID portion highlighted](docs/assets/tenantid.png)
+
+Production tenants end in `.apps.dynatrace.com`; internal Dynatrace lab tenants end in `.sprint.apps.dynatracelabs.com`.
+
 ```bash
 # OAuth login (recommended, no token management needed)
-dtctl auth login --context my-env --environment "https://abc12345.apps.dynatrace.com"
+dtctl auth login --context my-env --environment "https://<your-tenant-id>.apps.dynatrace.com"
 
 # Verify everything works
 dtctl doctor
 ```
 
 Token-based authentication and multi-environment configuration are covered in the **[Quick Start](https://dynatrace-oss.github.io/dtctl/docs/quick-start/)**.
+
+### Pick a safety level
+
+Every context is created with a **safety level** that controls what `dtctl` (and any AI driving it) is allowed to do in that tenant. Pass `--safety <level>` to `dtctl auth login`, or change it later with `dtctl config set-safety <level>`.
+
+| Level | What it allows |
+|---|---|
+| `readonly` | Query only — cannot create, update, or delete anything. |
+| `readwrite-mine` *(recommended default)* | Read everything; create / update / delete only resources **you own** (your workflows, dashboards, notebooks). |
+| `readwrite-all` | Read everything; create / update / delete **any** resource in the tenant. |
+| `dangerously-unrestricted` | Everything in `readwrite-all` plus permanent deletes (e.g. emptying trash). Use only when you really mean it. |
+
+Full token-scope mapping per safety level lives in **[docs/TOKEN_SCOPES.md](docs/TOKEN_SCOPES.md)**. You can always check the current context's level with `dtctl config describe-context $(dtctl config current-context) --plain`.
+
+### Your first five commands
+
+A copy-paste sanity sequence to confirm dtctl is installed, authenticated, and pointing at the right tenant:
+
+```bash
+dtctl version                       # CLI is installed and on PATH
+dtctl config current-context        # which tenant am I pointed at?
+dtctl auth whoami --plain           # am I authenticated?
+dtctl doctor                        # full health check (CLI + auth + connectivity)
+dtctl get problems --mine           # first real query against the tenant
+```
+
+If `whoami` returns `User session is no longer active` or `invalid_grant`, run `dtctl auth login` to refresh the session, then re-run the commands above. The active context is **persistent on disk** — it carries over between shells, IDEs, and reboots, so you only need to switch when you actually want a different tenant.
 
 ## Why dtctl?
 
@@ -65,6 +104,48 @@ Token-based authentication and multi-environment configuration are covered in th
 - **Watch mode**: Real-time monitoring with `--watch` for all resources
 - **DQL passthrough**: Execute queries directly, with template variables and file-based input
 - **[NO_COLOR](https://no-color.org/) support**: Respects `NO_COLOR`, `FORCE_COLOR=1`, and auto-detects TTY
+
+## How dtctl relates to the Dynatrace MCP server
+
+Dynatrace exposes two independent ways for an AI assistant (or a human) to reach a tenant: this CLI and the Dynatrace MCP server. They are complementary, not alternatives.
+
+| Path | How the AI invokes it | Where it's configured | Works without an AI client? |
+|---|---|---|---|
+| **`dtctl`** (this repo) | Through the agent's terminal/shell tool — the same way a human would. Output is plain text or, with `--agent`, a structured JSON envelope. | `~/.dtctl/config` (per machine, per user). | Yes — humans, scripts, and CI/CD all use it directly. |
+| **Dynatrace MCP server** | Through the agent's MCP tool registry. Each Dynatrace operation appears as a typed tool that the AI calls directly, with no shell round-trip. | An MCP client config file (e.g. `.vscode/mcp.json`), or the hosted remote server (no local config). | No — requires an MCP-aware client. |
+
+Both paths reach the same Dynatrace APIs, including DQL, Davis CoPilot chat, Davis Analyzers, workflows, dashboards, and notebooks. The difference is *how the AI talks to Dynatrace*, not *what it can ask Dynatrace to do*. Pick whichever fits your workflow — many users use both.
+
+### Capability matrix: which path do I need?
+
+If you're trying to decide whether you need MCP, dtctl, or both, this table covers the practical day-to-day differences. Most things either path can do; a handful are only on one side.
+
+| | **`dtctl`** | **MCP** |
+|---|---|---|
+| **What it is** | A CLI the AI runs in your terminal | A direct API bridge the AI calls in-process |
+| **Visible to you** | Yes — commands appear in the integrated terminal | No — runs silently in the background |
+| **Run DQL queries** | ✅ | ✅ |
+| **Read entities (services, hosts, problems, vulnerabilities)** | ✅ | ✅ |
+| **Create / edit notebooks, dashboards, workflows, settings** | ✅ | ✅ |
+| **Davis CoPilot chat** | ✅ (`dtctl exec copilot`) | ✅ |
+| **Davis Analyzers (forecasting, anomaly detection)** | ✅ (`dtctl exec analyzer`) | ✅ |
+| **Declarative `apply` / `diff` / `history` / `restore`** | ✅ | — |
+| **Document sharing (`share` / `unshare`)** | ✅ | — |
+| **Persistent multi-context config + safety levels** | ✅ | — (one tenant per server entry) |
+| **Multiple output formats (json / yaml / csv / toon / table / wide)** | ✅ | — (always JSON) |
+| **AI skills installer (`dtctl skills install`)** | ✅ | — |
+| **Send ad-hoc Slack message from chat** | — | ✅ |
+| **Send ad-hoc email from chat** | — | ✅ |
+| **Ingest a custom event** | — | ✅ |
+| **Reset Grail query budget** | — | ✅ |
+| **Natural-language → DQL helpers (one-shot)** | — | ✅ |
+
+**Bottom line:** Both are first-class. Configure whichever you'll actually use; configure both if you want every capability available at all times.
+
+**Where to find the MCP server:**
+
+- **[Dynatrace Hub listing](https://www.dynatrace.com/hub/detail/dynatrace-mcp-server/)** — recommended starting point. It links to the new **Remote Dynatrace MCP Server**, which requires no local install and is the path Dynatrace is actively investing in. Use this for the most current setup instructions and supported clients.
+- **[dynatrace-oss/dynatrace-mcp](https://github.com/dynatrace-oss/dynatrace-mcp)** — the original open-source local MCP server (Node.js, runs as a subprocess of your AI client). It is currently in maintenance mode while the remote server takes over, but it remains the place to read the source, file issues, or run the server locally in air-gapped or self-hosted scenarios.
 
 ## Supported Resources
 
